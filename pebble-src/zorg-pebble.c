@@ -109,18 +109,19 @@ main(int argc, char **argv, char **env)
 	}
       }
       switch (char) {
-      case 'q':			/* quit */
+      case 'q':			/* quit; on pebble, this will be "back" button when at top level */
 	running = 0;
 	break;
-      case 'f':			/* forward */
+      case 'f':			/* forward; on pebble, "down" button */
 	/* todo: move cursor to next at same level, stopping when level goes out */
 	break;
-      case 'b':			/* backward */
+      case 'b':			/* backward; on pebble, "up" button */
 	/* todo: move cursor to previous at same level, stopping when level goes out */
 	break;
-      case 'd':			/* down a level */
+      case 'd':			/* down a level; on pebble, "select" button */
 	break;
-      case 'u':			/* up a level */
+      case 'u':			/* up a level; on pebble, "back" button */
+	/* todo: go out a level, or if already at top level, quit */
 	break;
       }
     }
