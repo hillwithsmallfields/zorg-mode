@@ -18,8 +18,9 @@ main(int argc, char **argv, char **env)
   char *file_data;
   unsigned int i, j;
   unsigned int n_lines = 2;	/* initial line, and null line at end */
-  char **lines, **display_lines;
+  char **lines;
   unsigned int display_n_lines;
+  int *display_lines;
 
   if (argc != 2) {
     fprintf(stderr, "Usage: zorg-pebble file\n");
@@ -74,7 +75,7 @@ main(int argc, char **argv, char **env)
     exit(1);
   }
 
-  display_lines = (char**)malloc(n_lines * sizeof(char*));
+  display_lines = (int*)malloc(n_lines * sizeof(int));
   if (display_lines == NULL) {
     fprintf(stderr, "Could not allocate displayed lines array\n");
     exit(1);
@@ -105,7 +106,7 @@ main(int argc, char **argv, char **env)
     int old_start = start;
     int old_end = end;
 
-    unsigned int cursor = start;
+    unsigned int cursor;
     unsigned int parent = 0; /* we display the children of this */
     unsigned int parent_level = '0';
     unsigned int level;
@@ -123,6 +124,7 @@ main(int argc, char **argv, char **env)
 	if (parent >= end) {
 	  printf("seem to have gone off end\n");
 	}
+	display_n_lines = 0;
 	for (scan = parent + 1; scan < n_lines; scan++) {
 	  char margin_char;
 	  if (lines[scan] == NULL) {
@@ -136,7 +138,11 @@ main(int argc, char **argv, char **env)
 	  }
 	  if ((start == -1) && (margin_char == level)) {
 	    printf("Got start %d: %s\n", scan, lines[scan]);
-	    cursor = start = scan;
+	    start = scan;
+	  }
+	  if (margin_char == level) {
+	    printf("got one at our level: line %d is display line %d\n", scan, display_n_lines);
+	    display_lines[display_n_lines++] = scan;
 	  }
 	  if (margin_char < level) {
 	    printf("Gone out a level, stopping scan at %d: %s\n", scan, lines[scan]);
@@ -144,6 +150,8 @@ main(int argc, char **argv, char **env)
 	  }
 	  end = scan;		/* trails one behind */
 	}
+	display_lines[display_n_lines] = -1;
+	cursor = 0;
       }
 
       if (start == -1) {
@@ -153,13 +161,15 @@ main(int argc, char **argv, char **env)
 	end = old_end;
       }
 
-      printf("parent line: %s\n", lines[parent]);
-      display_n_lines = 0;
-      for (scan = start; scan <= end; scan++) {
-	if (lines[scan][0] == level) {
-	  display_lines[display_n_lines++] = lines[scan];
-	  printf("sibling line: %s%s\n", lines[scan], (scan == cursor) ? "<==" : "");
+      {
+	int i;
+	for (i = 0; i < display_n_lines; i++) {
+	  printf("%s display % 3d (line % 3d): %s\n",
+		 (i == cursor) ? "==>" : "   ",
+		 i, display_lines[i],
+		 lines[display_lines[i]]);
 	}
+
       }
 
       switch (command) {
@@ -170,46 +180,24 @@ main(int argc, char **argv, char **env)
       case 'f':			/* forward; on pebble, "down" button */
 	printf("forward from %d, limit %d, level=%c\n", cursor, end, level);
 	cursor++;
-	if (cursor > end) {
-	  cursor = end;
-	}
-	for (; cursor <= end; cursor++) {
-	  char margin_char = lines[cursor][0];
-	  if (margin_char < '0' || margin_char > '9') {
-	    printf("Skipping non-heading %d: %s\n", cursor, lines[cursor]);
-	    continue;		/* not a heading line */
-	  }
-	  if (margin_char == level) {
-	    break;
-	  }
+	if (cursor >= display_n_lines) {
+	  cursor = display_n_lines;
 	}
 	break;
 
       case 'b':			/* backward; on pebble, "up" button */
 	printf("backward from %d, limit %d, level=%c\n", cursor, end, level);
 	cursor--;
-	if (cursor < start) {
-	  cursor = start;
-	}
-	for (; cursor >= start; cursor--) {
-	  char margin_char = lines[cursor][0];
-	  if (margin_char < '0' || margin_char > '9') {
-	    printf("Skipping non-heading %d: %s\n", cursor, lines[cursor]);
-	    continue;		/* not a heading line */
-	  }
-	  if (margin_char == level) {
-	    break;
-	  }
+	if (cursor < 0) {
+	  cursor = 0;
 	}
 	break;
 
       case 's':			/* select: show, or down a level; on pebble, "select" button */
-	parent = cursor;
-	parent_level = level;
-
-	for (; cursor <= end; cursor++) {
-	  char margin_char = lines[cursor][0];
-
+	parent = display_lines[cursor];
+	parent_level = lines[parent][0];
+	for (scan = parent + 1; scan <= n_lines; scan++) {
+	  char margin_char = lines[scan][0];
 	  if (margin_char < '0' || margin_char > '9') {
 	    printf("Skipping non-heading %d: %s\n", scan, lines[scan]);
 	    continue;		/* not a heading line */
@@ -226,16 +214,16 @@ main(int argc, char **argv, char **env)
 
       case 'u':			/* up a level; on pebble, "back" button */
 	printf("going up; level=%c cursor=%d\n", level, cursor);
-	for (cursor = start; cursor >= 0; cursor--) {
-	  char margin_char = lines[cursor][0];
+	for (scan = parent; scan >= 0; scan--) {
+	  char margin_char = lines[scan][0];
 	  if (margin_char < '0' || margin_char > '9') {
 	    printf("Skipping non-heading %d: %s\n", scan, lines[scan]);
 	    continue;		/* not a heading line */
 	  }
-	  printf("Trying %d: %s\n", cursor, lines[cursor]);
-	  if (margin_char < level) {
+	  printf("Trying %d: %s\n", scan, lines[scan]);
+	  if (margin_char < parent_level) {
 	    printf("Got it\n");
-	    parent = cursor;
+	    parent = scan;
 	    parent_level = margin_char;
 	    level = parent_level+1;
 	    old_start = start;
