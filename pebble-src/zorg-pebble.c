@@ -83,7 +83,7 @@ main(int argc, char **argv, char **env)
 
   lines[0] = file_data;
 
-  for (j = 0, i = 1; i < file_size; i++) {
+  for (j = 1, i = 1; i < file_size; i++) {
     if (file_data[i] == '\0') {
       // fprintf(stderr, "recording line %d at offset %d (%p)\n", j, i, &(file_data[i+1]));
       lines[j++] = &(file_data[i+1]);
@@ -120,17 +120,17 @@ main(int argc, char **argv, char **env)
       printf("\n\ncommand='%c'; parent=%d; start=%d; cursor=%d; end=%d; parent_level=%c; level=%c\n",
 	     command, parent, start, cursor, end, parent_level, level);
       if ((start == -1) || (end == -1)) {
-	printf("rescanning for start and end\n");
+	printf("rescanning for start and end, parent=%d\n", parent);
 	if (parent >= end) {
 	  printf("seem to have gone off end\n");
 	}
 	display_n_lines = 0;
-	for (scan = parent + 1; scan < n_lines; scan++) {
+	for (scan = parent; scan < n_lines; scan++) {
 	  char margin_char;
 	  if (lines[scan] == NULL) {
 	    break;
 	  }
-	  printf("scan %d: %s\n", scan, lines[scan]);
+	  printf("scan %d: %s (level %c, want %c)\n", scan, lines[scan], lines[scan][0], level);
 	  margin_char = lines[scan][0];
 	  if (margin_char < '0' || margin_char > '9') {
 	    printf("Skipping non-heading %d: %s\n", scan, lines[scan]);
@@ -145,7 +145,7 @@ main(int argc, char **argv, char **env)
 	    display_lines[display_n_lines++] = scan;
 	  }
 	  if (margin_char < level) {
-	    printf("Gone out a level, stopping scan at %d: %s\n", scan, lines[scan]);
+	    printf("Gone out a level (on %c, outside %c), stopping scan at %d: %s\n", margin_char, level, scan, lines[scan]);
 	    break;		/* gone out a level */
 	  }
 	  end = scan;		/* trails one behind */
