@@ -16,6 +16,8 @@ FFile to export into: ")
        ((looking-at "^\\(\\*+\\)")
 	;; turn * sequences into numbers
 	;; todo: check they're not too large
+	;; todo: convert keys
+	;; todo: convert tags
 	(replace-match (int-to-string (- (match-end 1) (match-beginning 1))) nil t nil 1))
        ((looking-at "^\\(\\s-+\\)")
 	;; start other lines with a single space
