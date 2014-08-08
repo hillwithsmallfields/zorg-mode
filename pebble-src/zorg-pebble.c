@@ -3,6 +3,13 @@
    I may at some stage spin off an ncurses version of it.
  */
 
+/* fixme: not displaying the first item at the top level */
+/* fixme: crashing on moving up the tree to the top level */
+/* todo: do something different on reaching a leaf node */
+/* todo: tag-based selection */
+/* todo: date/time based selection */
+/* todo: changing states, and sending them back */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
