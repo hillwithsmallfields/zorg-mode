@@ -1,5 +1,7 @@
 /* Initially, this is a whole C command-line program, while I test it.
-   Later on, it will become a pebble program. */
+   Later on, it will become a pebble program.
+   I may at some stage spin off an ncurses version of it.
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -117,32 +119,36 @@ main(int argc, char **argv, char **env)
       unsigned int scan;
       first = 0;
       level = parent_level + 1;
-      printf("\n\ncommand='%c'; parent=%d; start=%d; cursor=%d; end=%d; parent_level=%c; level=%c\n",
-	     command, parent, start, cursor, end, parent_level, level);
+      if ((command != ' ') && (command != '\n')) {
+	printf("\n\ncommand='%c'; parent=%d; start=%d; cursor=%d; end=%d; parent_level=%c; level=%c\n",
+	       command, parent, start, cursor, end, parent_level, level);
+      }
+
       if ((start == -1) || (end == -1)) {
 	printf("rescanning for start and end, parent=%d\n", parent);
 	if (parent >= end) {
 	  printf("seem to have gone off end\n");
 	}
 	display_n_lines = 0;
-	for (scan = parent; scan < n_lines; scan++) {
+
+	for (scan = parent+1; scan < n_lines; scan++) {
 	  char margin_char;
 	  if (lines[scan] == NULL) {
 	    break;
 	  }
-	  printf("scan %d: %s (level %c, want %c)\n", scan, lines[scan], lines[scan][0], level);
 	  margin_char = lines[scan][0];
+	  printf("  scan %d: %s (level %c, want %c)\n", scan, lines[scan], margin_char, level);
 	  if (margin_char < '0' || margin_char > '9') {
-	    printf("Skipping non-heading %d: %s\n", scan, lines[scan]);
+	    printf("  Skipping non-heading %d: %s\n", scan, lines[scan]);
 	    continue;		/* not a heading line */
 	  }
-	  if ((start == -1) && (margin_char == level)) {
-	    printf("Got start %d: %s\n", scan, lines[scan]);
-	    start = scan;
-	  }
 	  if (margin_char == level) {
-	    printf("got one at our level: line %d is display line %d\n", scan, display_n_lines);
+	    printf("  got one at our level: line %d is display line %d\n", scan, display_n_lines);
 	    display_lines[display_n_lines++] = scan;
+	    if (start == -1) {
+	      printf("Got start %d: %s\n", scan, lines[scan]);
+	      start = scan;
+	    }
 	  }
 	  if (margin_char < level) {
 	    printf("Gone out a level (on %c, outside %c), stopping scan at %d: %s\n", margin_char, level, scan, lines[scan]);
@@ -153,6 +159,7 @@ main(int argc, char **argv, char **env)
 	display_lines[display_n_lines] = -1;
 	cursor = 0;
       }
+
 
       if (start == -1) {
 	printf("failed to set start\n");
@@ -196,16 +203,22 @@ main(int argc, char **argv, char **env)
       case 's':			/* select: show, or down a level; on pebble, "select" button */
 	parent = display_lines[cursor];
 	parent_level = lines[parent][0];
+	/* Look for a new level; we don't assume it's parent_level+1,
+	   because the user might be an undisciplined wreck who has
+	   jumped a level ;-) */
+	printf("select/show: current=%d becomes new parent, new parent level=%c, looking for next lower level\n", parent, parent_level);
 	for (scan = parent + 1; scan <= n_lines; scan++) {
 	  char margin_char = lines[scan][0];
+	  printf("  considering %s\n", lines[scan]);
 	  if (margin_char < '0' || margin_char > '9') {
 	    printf("Skipping non-heading %d: %s\n", scan, lines[scan]);
 	    continue;		/* not a heading line */
 	  }
-	  if (margin_char > level) {
+	  if (margin_char > parent_level) {
 	    level = margin_char;
 	    old_start = start;
 	    old_end = end;
+	    printf("Found new level=%c, remembering old start=%d old end=%d\n", level, old_start, old_end);
 	    start = end = -1;
 	    break;
 	  }
