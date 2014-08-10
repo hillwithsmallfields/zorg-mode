@@ -23,6 +23,17 @@ typedef enum zorg_mode {
   tag
 } zorg_mode;
 
+typedef struct zorg_top_level_item {
+  zorg_mode mode;
+  char *label;
+} zorg_top_level_item;
+
+struct zorg_top_level_item top_level_items[] = {
+  { tree, "tree" },
+  { date, "date" },
+  { tag, "tag" },
+  { top_level_chooser, NULL }};
+
 zorg_mode mode;
 unsigned int parent;
 unsigned int parent_level;
@@ -38,31 +49,67 @@ int *display_lines;
 int cursor;
 
 void
+set_mode(zorg_mode new_mode)
+{
+  mode = new_mode;
+  switch (new_mode) {
+  case top_level_chooser:
+    display_n_lines = (sizeof(top_level_items) / sizeof(top_level_items[0])) - 1;
+    break;
+  case tree:
+    parent = 0;
+    parent_level = '0';
+    level = parent_level + 1;
+    start = end = -1;
+    break;
+  case date:
+    printf("date mode not implemented\n");
+    set_mode(top_level_chooser);
+    break;
+  case tag:
+    printf("tags mode not implemented\n");
+    set_mode(top_level_chooser);
+    break;
+  }
+ }
+
+void
 zorg_middle_button()
 {
   unsigned int scan;
 
-  parent = display_lines[cursor];
-  parent_level = lines[parent][0];
-  /* Look for a new level; we don't assume it's parent_level+1,
-     because the user might be an undisciplined wreck who has
-     jumped a level ;-) */
-  printf("select/show: current=%d becomes new parent, new parent level=%c, looking for next lower level\n", parent, parent_level);
-  for (scan = parent + 1; scan <= n_lines; scan++) {
-    char margin_char = lines[scan][0];
-    printf("  considering %s\n", lines[scan]);
-    if (margin_char < '0' || margin_char > '9') {
-      printf("Skipping non-heading %d: %s\n", scan, lines[scan]);
-      continue;		/* not a heading line */
+  switch (mode) {
+  case top_level_chooser:
+    set_mode(top_level_items[cursor].mode);
+    break;
+  case tree:
+    parent = display_lines[cursor];
+    parent_level = lines[parent][0];
+    /* Look for a new level; we don't assume it's parent_level+1,
+       because the user might be an undisciplined wreck who has
+       jumped a level ;-) */
+    printf("select/show: current=%d becomes new parent, new parent level=%c, looking for next lower level\n", parent, parent_level);
+    for (scan = parent + 1; scan <= n_lines; scan++) {
+      char margin_char = lines[scan][0];
+      printf("  considering %s\n", lines[scan]);
+      if (margin_char < '0' || margin_char > '9') {
+	printf("Skipping non-heading %d: %s\n", scan, lines[scan]);
+	continue;		/* not a heading line */
+      }
+      if (margin_char > parent_level) {
+	level = margin_char;
+	old_start = start;
+	old_end = end;
+	printf("Found new level=%c, remembering old start=%d old end=%d\n", level, old_start, old_end);
+	start = end = -1;
+	break;
+      }
     }
-    if (margin_char > parent_level) {
-      level = margin_char;
-      old_start = start;
-      old_end = end;
-      printf("Found new level=%c, remembering old start=%d old end=%d\n", level, old_start, old_end);
-      start = end = -1;
-      break;
-    }
+    break;
+  case date:
+    break;
+  case tag:
+    break;
   }
 }
 
@@ -70,37 +117,52 @@ void
 zorg_back_button()
 {
   int scan;
-  printf("going up; level=%c parent_level=%c cursor=%d parent=%d\n", level, parent_level, cursor, parent);
-  for (scan = parent; scan >= 0; scan--) {
-    char margin_char = lines[scan][0];
-    printf("Trying %d, level is %c, looking for level < %c: %s\n", scan, margin_char, parent_level, lines[scan]);
-    if (margin_char < '0' || margin_char > '9') {
-      printf("Skipping non-heading %d: %s\n", scan, lines[scan]);
-      continue;		/* not a heading line */
-    }
-    if (parent_level == '1') {
-      /* go to the top level now; there's no actual parent node for
-	 this, so recognize it explictly */
-      level = '1';
-      parent_level = '0';
-      parent = 0;
+  switch (mode) {
+  case top_level_chooser:
+    printf("this would quit\n");
+    break;
+  case tree:
+    printf("going up; level=%c parent_level=%c cursor=%d parent=%d\n", level, parent_level, cursor, parent);
+    if (parent_level == '0') {
+      set_mode(top_level_chooser);
     } else {
-      if (margin_char < parent_level) {
-	level = parent_level;	/* new level is the old parent level */
-	parent = scan;
-	parent_level = (scan == 0) ? '0' : margin_char;
-	printf("Got new parent level %c; new current level is %c\n", parent_level, level);
-	break;
+      for (scan = parent; scan >= 0; scan--) {
+	char margin_char = lines[scan][0];
+	printf("Trying %d, level is %c, looking for level < %c: %s\n", scan, margin_char, parent_level, lines[scan]);
+	if (margin_char < '0' || margin_char > '9') {
+	  printf("Skipping non-heading %d: %s\n", scan, lines[scan]);
+	  continue;		/* not a heading line */
+	}
+	if (parent_level == '1') {
+	  /* go to the top level now; there's no actual parent node for
+	     this, so recognize it explictly */
+	  level = '1';
+	  parent_level = '0';
+	  parent = 0;
+	} else {
+	  if (margin_char < parent_level) {
+	    level = parent_level;	/* new level is the old parent level */
+	    parent = scan;
+	    parent_level = (scan == 0) ? '0' : margin_char;
+	    printf("Got new parent level %c; new current level is %c\n", parent_level, level);
+	    break;
+	  }
+	}
+	old_start = start;
+	old_end = end;
+	start = end = -1;
       }
     }
-    old_start = start;
-    old_end = end;
-    start = end = -1;
+    break;
+  case date:
+    break;
+  case tag:
+    break;
   }
 }
 
 void
-zorg_pebble_rescan()
+zorg_pebble_rescan_tree_level()
 {
   int scan;
 
@@ -145,18 +207,12 @@ zorg_pebble_rescan()
   }
 }
 
-char *chooser_entries[] = {
-  "Tree",
-  "Date",
-  "Tag"
-};
-
 char *
 zorg_pebble_display_line(unsigned int index)
 {
   switch (mode) {
   case top_level_chooser:
-    return chooser_entries[index];
+    return top_level_items[index].label;
   case tree:
     return lines[display_lines[index]];
   case date:
@@ -171,7 +227,7 @@ zorg_pebble_display_n_lines()
 {
   switch (mode) {
   case top_level_chooser:
-    return 2;			/* fixme: there's a sizeof-like thing I can use, I think */
+    return (sizeof(top_level_items) / sizeof(top_level_items[0])) - 1;
   case tree:
     return display_n_lines;
   case date:
@@ -295,8 +351,19 @@ main(int argc, char **argv, char **env)
 	       command, parent, start, cursor, end, parent_level, level);
       }
 
-      if ((start == -1) || (end == -1)) {
-	zorg_pebble_rescan();
+      /* pick up any mode change */
+      switch (mode) {
+      case top_level_chooser:
+	break;
+      case tree:
+	if ((start == -1) || (end == -1)) {
+	  zorg_pebble_rescan_tree_level();
+	}
+	break;
+      case date:
+	break;
+      case tag:
+	break;
       }
 
       {
