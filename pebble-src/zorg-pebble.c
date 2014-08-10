@@ -20,7 +20,8 @@ typedef enum zorg_mode {
   top_level_chooser,
   tree,
   date,
-  tag
+  tag,
+  tag_chooser			/* used in the lead-in to tag mode */
 } zorg_mode;
 
 typedef struct zorg_top_level_item {
@@ -31,12 +32,12 @@ typedef struct zorg_top_level_item {
 struct zorg_top_level_item top_level_items[] = {
   { tree, "tree" },
   { date, "date" },
-  { tag, "tag" },
+  { tag_chooser, "tag" },
   { top_level_chooser, NULL }};
 
+zorg_mode mode;
 char *file_data;
 unsigned int file_size;
-zorg_mode mode;
 unsigned int parent;
 unsigned int parent_level;
 unsigned int level;
@@ -52,6 +53,7 @@ char **keywords = NULL;
 char *tags_line = NULL;
 unsigned int n_tags = 0;
 char **tags = NULL;
+int chosen_tag = -1;
 unsigned int display_n_lines;
 int *display_lines;
 int cursor;
@@ -60,6 +62,7 @@ static void
 set_mode(zorg_mode new_mode)
 {
   mode = new_mode;
+  cursor = 0;			/* jump back to the top */
   switch (new_mode) {
   case top_level_chooser:
     display_n_lines = (sizeof(top_level_items) / sizeof(top_level_items[0])) - 1;
@@ -73,6 +76,9 @@ set_mode(zorg_mode new_mode)
   case date:
     printf("date mode not implemented\n");
     set_mode(top_level_chooser);
+    break;
+  case tag_chooser:
+    chosen_tag = -1;
     break;
   case tag:
     printf("tags mode not implemented\n");
@@ -115,6 +121,11 @@ zorg_middle_button()
     }
     break;
   case date:
+    break;
+  case tag_chooser:
+    chosen_tag = cursor;
+    printf("entering tags mode with chosen tag %d = %s\n", chosen_tag, tags[chosen_tag]);
+    set_mode(tag);
     break;
   case tag:
     break;
@@ -164,7 +175,11 @@ zorg_back_button()
     break;
   case date:
     break;
+  case tag_chooser:
+    set_mode(top_level_chooser);
+    break;
   case tag:
+    set_mode(tag_chooser);
     break;
   }
 }
@@ -225,6 +240,9 @@ zorg_pebble_display_line(unsigned int index)
     return lines[display_lines[index]];
   case date:
     return "date mode not implemented";
+  case tag_chooser:
+    return tags[index];
+    break;
   case tag:
     return "tag mode not implemented";
   }
@@ -240,6 +258,8 @@ zorg_pebble_display_n_lines()
     return display_n_lines;
   case date:
     return 0;
+  case tag_chooser:
+    return n_tags;
   case tag:
     return 0;
   }
@@ -398,7 +418,7 @@ parse_data()
 int
 main(int argc, char **argv, char **env)
 {
-  mode = tree;
+  mode = top_level_chooser;
   n_lines = 2;		/* for initial line, and final line */
 
   if (argc != 2) {
