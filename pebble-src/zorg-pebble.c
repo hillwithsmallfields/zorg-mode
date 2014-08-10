@@ -137,6 +137,12 @@ zorg_pebble_rescan()
   }
   display_lines[display_n_lines] = -1;
   cursor = 0;
+  if (start == -1) {
+    printf("failed to set start\n");
+    /* todo: handle leaf node */
+    start = old_start;
+    end = old_end;
+  }
 }
 
 char *chooser_entries[] = {
@@ -291,13 +297,6 @@ main(int argc, char **argv, char **env)
 
       if ((start == -1) || (end == -1)) {
 	zorg_pebble_rescan();
-      }
-
-      if (start == -1) {
-	printf("failed to set start\n");
-	/* todo: handle leaf node */
-	start = old_start;
-	end = old_end;
       }
 
       {
