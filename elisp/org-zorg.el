@@ -1,9 +1,21 @@
 ;;;; Convert org files to zorg files
 
+;;; A .zorg file is a bit like a .org file, but the repeated
+;;; characters marking a heading have been replaced by a digit
+;;; representing the number of them, keywords will be replaced by a
+;;; short indication, with a keywords line in the file indicating the
+;;; expansions, and the tags likewise.  The keywords line begins with
+;;; a vertical bar, and has space-separated keywords, with a vertical
+;;; bar (with a space on either side of it) marking the boundary at
+;;; which cycling a keyword should go back.  The tags line begins with
+;;; a colon, and has a colon before each tag, and none at the end.
+
 (defun org-export-to-zorg (org-file zorg-file)
   "Convert ORG-FILE to ZORG-FILE."
   (interactive "fFile to export from:
 FFile to export into: ")
+  ;; todo: produce keywords line, shorten keywords
+  ;; todo: produce tags line, shorten tags
   (save-excursion
     (find-file zorg-file)
     (erase-buffer)
