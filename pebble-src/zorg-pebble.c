@@ -34,6 +34,8 @@ struct zorg_top_level_item top_level_items[] = {
   { tag, "tag" },
   { top_level_chooser, NULL }};
 
+char *file_data;
+unsigned int file_size;
 zorg_mode mode;
 unsigned int parent;
 unsigned int parent_level;
@@ -44,11 +46,17 @@ int old_start;
 int old_end;
 unsigned int n_lines;
 char **lines;
+char *keywords_line = NULL;
+unsigned int n_keywords = 0;
+char **keywords = NULL;
+char *tags_line = NULL;
+unsigned int n_tags = 0;
+char **tags = NULL;
 unsigned int display_n_lines;
 int *display_lines;
 int cursor;
 
-void
+static void
 set_mode(zorg_mode new_mode)
 {
   mode = new_mode;
@@ -73,7 +81,7 @@ set_mode(zorg_mode new_mode)
   }
  }
 
-void
+static void
 zorg_middle_button()
 {
   unsigned int scan;
@@ -113,7 +121,7 @@ zorg_middle_button()
   }
 }
 
-void
+static void
 zorg_back_button()
 {
   int scan;
@@ -161,7 +169,7 @@ zorg_back_button()
   }
 }
 
-void
+static void
 zorg_pebble_rescan_tree_level()
 {
   int scan;
@@ -207,7 +215,7 @@ zorg_pebble_rescan_tree_level()
   }
 }
 
-char *
+static char *
 zorg_pebble_display_line(unsigned int index)
 {
   switch (mode) {
@@ -222,7 +230,7 @@ zorg_pebble_display_line(unsigned int index)
   }
 }
 
-int
+static int
 zorg_pebble_display_n_lines()
 {
   switch (mode) {
@@ -237,25 +245,12 @@ zorg_pebble_display_n_lines()
   }
 }
 
-int
-main(int argc, char **argv, char **env)
+static void
+read_file(char *file_name, unsigned int *file_size_result)
 {
   struct stat stat_buf;
-  char *file_name;
-  unsigned int file_size;
   int fd;
-  char *file_data;
-  unsigned int i, j;
 
-  mode = tree;
-  n_lines = 2;		/* for initial line, and final line */
-
-  if (argc != 2) {
-    fprintf(stderr, "Usage: zorg-pebble file\n");
-    exit(1);
-  }
-
-  file_name = argv[1];
   if (stat(file_name, &stat_buf) != 0) {
     fprintf(stderr, "Could not stat %s\n", file_name);
     exit(1);
@@ -287,6 +282,13 @@ main(int argc, char **argv, char **env)
   fprintf(stderr, "Read file of %d bytes\n", file_size);
 
   file_data[file_size] = '\0';
+}
+
+static void
+parse_data()
+{
+  unsigned int i, j;
+  char *p;
 
   /* split buffer into lines */
   for (i = 0; i < file_size; i++) {
@@ -328,6 +330,86 @@ main(int argc, char **argv, char **env)
     printf("Line %d: %s\n", i, lines[i]);
   }
 #endif
+  for (i = 0; i < n_lines; i++) {
+    printf("looking at line %d: %s\n", i, lines[i]);
+    if (lines[i] != NULL) {
+      switch (lines[i][0]) {
+      case '|':
+	keywords_line = lines[i];
+	for (p = keywords_line; *p != '\0'; p++) {
+	  if (*p == ' ') {
+	    n_keywords++;
+	  }
+	}
+	keywords = (char**)malloc(sizeof(char*) * (n_keywords+1));
+	if (keywords == NULL) {
+	  printf("Could not allocate keywords array\n");
+	  exit(1);
+	}
+	j = 0;
+	for (p = keywords_line; *p != '\0'; p++) {
+	  if (*p == ' ') {
+	    *p = '\0';
+	    keywords[j++] = p+1;
+	  }
+	}
+	break;
+      case ':':
+	tags_line = lines[i];
+	for (p = tags_line; *p != '\0'; p++) {
+	  if (*p == ':') {
+	    n_tags++;
+	  }
+	}
+	tags = (char**)malloc(sizeof(char*) * (n_tags+1));
+	if (keywords == NULL) {
+	  printf("Could not allocate tags array\n");
+	  exit(1);
+	}
+	j = 0;
+	for (p = tags_line; *p != '\0'; p++) {
+	  if (*p == ':') {
+	    *p = '\0';
+	    tags[j++] = p+1;
+	  }
+	}
+	break;
+      default:
+	break;
+      }
+    }
+  }
+#if 1
+  if (keywords != NULL) {
+    printf("Keywords:\n");
+    for (i = 0; i < n_keywords; i++) {
+      printf("  %d: %s\n", i, keywords[i]);
+    }
+  }
+  if (tags != NULL) {
+    printf("Tags:\n");
+    for (i = 0; i < n_tags; i++) {
+      printf("  %d: %s\n", i, tags[i]);
+    }
+  }
+#endif
+}
+
+int
+main(int argc, char **argv, char **env)
+{
+  mode = tree;
+  n_lines = 2;		/* for initial line, and final line */
+
+  if (argc != 2) {
+    fprintf(stderr, "Usage: zorg-pebble file\n");
+    exit(1);
+  }
+
+  read_file(argv[1], &file_size);
+
+  parse_data();
+
   printf("about to start main block, display_lines=%p lines=%p\n", display_lines, lines);
 
   {
