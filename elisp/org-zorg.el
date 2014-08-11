@@ -36,13 +36,17 @@ FFile to export into: ")
 	 ((looking-at "^\\(\\*+\\)")
 	  (let ((line-tags (save-match-data (org-get-tags))))
 	    (message "file-tags %S; line-tags %S" file-tags line-tags)
+
 	    ;; turn * sequences into numbers
 	    ;; todo: check they're not too large
 	    (replace-match (int-to-string (- (match-end 1) (match-beginning 1))) nil t nil 1)
+
+	    ;; convert keyword to index in file-level list of keywords
 	    (beginning-of-line 1) (forward-char 2)
 	    (when (looking-at org-todo-regexp)
 	      (replace-match (format "!%d" (position (match-string-no-properties 1) file-keywords :test 'string=))))
 
+	    ;; convert tags into list of indices in file-level list of keywords
 	    (when line-tags
 	      (insert " :"
 		      (mapconcat (lambda (tag)
@@ -51,6 +55,7 @@ FFile to export into: ")
 				 ":")
 		      " ")
 	      ;; todo: remove original tags
+	      
 	      )
 	    ))
 	 ((looking-at "^\\(\\s-+\\)")
