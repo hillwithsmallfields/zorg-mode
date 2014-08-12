@@ -52,6 +52,8 @@ zorg_mode mode;
 
 data_source_type data_source;
 
+char *currently_selected_file = NULL;
+
 /* The whole data read from file or connection.
    This is a file as prepared by the companion emacs-lisp code.
 */
@@ -110,6 +112,8 @@ set_mode(zorg_mode new_mode)
   switch (new_mode) {
   case top_level_chooser:
     display_n_lines = (sizeof(top_level_items) / sizeof(top_level_items[0])) - 1;
+    /* doesn't use display_lines, as zorg_pebble_display_line returns
+       a string from top_level_items directly */
     break;
   case tree:
     parent = 0;
@@ -521,6 +525,7 @@ parse_data(char *data_buffer, unsigned int data_size, int *line_count_p)
 static void
 load_local_file(char *filename)
 {
+  printf("Loading data from local file %s\n", filename);
   file_data = read_local_file(filename, &file_size);
 
   display_lines = parse_data(file_data, file_size, &n_lines);
@@ -561,6 +566,22 @@ unload_remote_stream()
 }
 
 static void
+load_data()
+{
+  printf("load_data called, file_data=%p currently_selected_file=%s\n", file_data, currently_selected_file);
+  if (file_data == NULL) {
+    switch (data_source) {
+    case local_file:
+      load_local_file(currently_selected_file);
+      break;
+    case remote_stream:
+      load_remote_stream(currently_selected_file);
+      break;
+    }
+  }
+}
+
+static void
 unload_data()
 {
   switch (data_source) {
@@ -569,6 +590,34 @@ unload_data()
     break;
   case remote_stream:
     unload_remote_stream();
+    break;
+  }
+}
+
+static void
+update_display_lines()
+{
+  /* pick up any mode change, or any changes within a mode */
+  switch (mode) {
+  case top_level_chooser:
+    break;
+  case file_chooser:
+    break;
+  case tree:
+    load_data();
+    if ((start == -1) || (end == -1)) {
+      zorg_pebble_rescan_tree_level();
+    }
+    break;
+  case date:
+    break;
+  case tag_chooser:
+    break;
+  case tag:
+    break;
+  case live_data:
+    break;
+  case settings:
     break;
   }
 }
@@ -583,7 +632,8 @@ main(int argc, char **argv, char **env)
     exit(1);
   }
 
-  load_local_file(argv[1]);
+  currently_selected_file = argv[1];
+  data_source = local_file;
 
   printf("about to start main block, display_lines=%p lines=%p n_lines=%d\n", display_lines, lines, n_lines);
 
@@ -608,36 +658,18 @@ main(int argc, char **argv, char **env)
 	       command, parent, start, cursor, end, parent_level, level);
       }
 
-      /* pick up any mode change */
-      switch (mode) {
-      case top_level_chooser:
-	break;
-      case file_chooser:
-	break;
-      case tree:
-	if ((start == -1) || (end == -1)) {
-	  zorg_pebble_rescan_tree_level();
-	}
-	break;
-      case date:
-	break;
-      case tag_chooser:
-	break;
-      case tag:
-	break;
-      case live_data:
-	break;
-      case settings:
-	break;
-      }
+      update_display_lines();
 
+      // if ((file_data != NULL) && (display_lines != NULL) && (lines != NULL))
       {
 	int i;
-	printf("parent %d:  %s\n", parent, lines[parent]);
+	if (mode == tree) {
+	  printf("parent %d:  %s\n", parent, lines[parent]);
+	}
 	for (i = 0; i < zorg_pebble_display_n_lines(); i++) {
 	  printf("  %s display % 3d (line % 3d): %s\n",
 		 (i == cursor) ? "==>" : "   ",
-		 i, display_lines[i],
+		 i, (display_lines != NULL) ? display_lines[i] : -1,
 		 zorg_pebble_display_line(i));
 	}
 
