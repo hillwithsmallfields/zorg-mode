@@ -28,6 +28,12 @@ typedef enum zorg_mode {
   settings
 } zorg_mode;
 
+typedef enum data_source_type {
+  local_file,
+  remote_stream,
+  none
+} data_source_type;
+
 typedef struct zorg_top_level_item {
   zorg_mode mode;
   char *label;
@@ -43,6 +49,8 @@ struct zorg_top_level_item top_level_items[] = {
   { top_level_chooser, NULL }};
 
 zorg_mode mode;
+
+data_source_type data_source;
 
 /* The whole data read from file or connection.
    This is a file as prepared by the companion emacs-lisp code.
@@ -510,6 +518,45 @@ parse_data(char *data_buffer, unsigned int data_size, int *line_count_p)
   return displayed_lines_indices;
 }
 
+static void
+load_local_file(char *filename)
+{
+  file_data = read_local_file(filename, &file_size);
+
+  display_lines = parse_data(file_data, file_size, &n_lines);
+
+  data_source = local_file;
+}
+
+static void
+unload_local_file()
+{
+  free(file_data);
+  file_data = NULL;
+  file_size = 0;
+  free(lines);
+  lines = NULL;
+  n_lines = 0;
+  free(display_lines);
+  display_lines = NULL;
+  display_n_lines = 0;
+
+  data_source = none;
+}
+
+static void
+unload_data()
+{
+  switch (data_source) {
+  case local_file:
+    unload_local_file();
+    break;
+  case remote_stream:
+    /* todo: free data lines */
+    break;
+  }
+}
+
 int
 main(int argc, char **argv, char **env)
 {
@@ -520,9 +567,7 @@ main(int argc, char **argv, char **env)
     exit(1);
   }
 
-  file_data = read_local_file(argv[1], &file_size);
-
-  display_lines = parse_data(file_data, file_size, &n_lines);
+  load_local_file(argv[1]);
 
   printf("about to start main block, display_lines=%p lines=%p n_lines=%d\n", display_lines, lines, n_lines);
 
@@ -619,9 +664,7 @@ main(int argc, char **argv, char **env)
     }
   }
 
-  free(lines);
-  free(display_lines);
-  free(file_data);
+  unload_data();
 
   exit(0);
 }
