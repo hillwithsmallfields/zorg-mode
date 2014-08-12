@@ -3,11 +3,12 @@
    I may at some stage spin off an ncurses version of it.
  */
 
-/* fixme: getting stuck on moving up the tree to the top level */
 /* todo: do something different on reaching a leaf node */
 /* todo: tag-based selection */
 /* todo: date/time based selection */
-/* todo: changing states, and sending them back */
+/* todo: changing states, and sending them back using pebble's DataLogging */
+/* todo: live data */
+/* todo: settings */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -89,6 +90,13 @@ int cursor;
 static void
 set_mode(zorg_mode new_mode)
 {
+  /* undo anything from the old mode */
+  switch (mode) {
+  case live_data:
+    /* todo: unregister event handlers */
+    break;
+  }
+
   mode = new_mode;
   cursor = 0;			/* jump back to the top */
   switch (new_mode) {
@@ -117,8 +125,7 @@ set_mode(zorg_mode new_mode)
     set_mode(top_level_chooser);
     break;
   case live_data:
-    printf("live data mode not implemented\n");
-    set_mode(top_level_chooser);
+    /* todo: any live data initialization (register event handlers etc) */
     break;
   case settings:
     printf("settings mode not implemented\n");
@@ -173,6 +180,7 @@ zorg_middle_button()
   case tag:
     break;
   case live_data:
+    /* maybe update, but it should probably do that on ticks anyway */
     break;
   case settings:
     break;
@@ -227,6 +235,8 @@ zorg_back_button()
   case tag_chooser:
   case tag:
   case live_data:
+    set_mode(top_level_chooser);
+    break;
   case settings:
     set_mode(tag_chooser);
     break;
@@ -303,12 +313,18 @@ zorg_pebble_display_line(unsigned int index)
     return "date mode not implemented";
   case tag_chooser:
     return tags[index];
-    break;
   case tag:
     return "tag mode not implemented";
   case live_data:
-    return "live data not implemented";
-    break;
+    switch (index) {
+    case 0: return "Time will go here";
+    case 1: return "Battery level will go here";
+    case 2: return "File name will go here";
+    case 3: return "Memory usage will go here";
+    default: return "Gone off end!";
+    }
+  case settings:
+    return "settings not implemented";
   }
 }
 
@@ -329,7 +345,7 @@ zorg_pebble_display_n_lines()
   case tag:
     return 0;
   case live_data:
-    return 0;
+    return 4;
   case settings:
     return 0;
   }
@@ -395,13 +411,13 @@ parse_data(char *data_buffer, unsigned int data_size, int *line_count_p)
     }
   }
 
-  lines = (char**)malloc(line_count * sizeof(char*));
+  lines = (char**)malloc((line_count) * sizeof(char*));
   if (lines == NULL) {
     fprintf(stderr, "Could not allocate lines array\n");
     exit(1);
   }
 
-  displayed_lines_indices = (int*)malloc(line_count * sizeof(int));
+  displayed_lines_indices = (int*)malloc((line_count) * sizeof(int));
   if (displayed_lines_indices == NULL) {
     fprintf(stderr, "Could not allocate displayed lines array\n");
     exit(1);
