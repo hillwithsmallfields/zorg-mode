@@ -545,6 +545,22 @@ unload_local_file()
 }
 
 static void
+load_remote_stream(char *stream_name)
+{
+  /* todo:
+     request stream_name from the phone
+     get a number of lines
+     read all the lines, and parse them
+  */
+
+}
+
+static void
+unload_remote_stream()
+{
+}
+
+static void
 unload_data()
 {
   switch (data_source) {
@@ -552,7 +568,7 @@ unload_data()
     unload_local_file();
     break;
   case remote_stream:
-    /* todo: free data lines */
+    unload_remote_stream();
     break;
   }
 }
