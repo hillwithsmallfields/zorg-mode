@@ -18,10 +18,13 @@
 
 typedef enum zorg_mode {
   top_level_chooser,
+  file_chooser,
   tree,
   date,
   tag,
-  tag_chooser			/* used in the lead-in to tag mode */
+  tag_chooser,			/* used in the lead-in to tag mode */
+  live_data,
+  settings
 } zorg_mode;
 
 typedef struct zorg_top_level_item {
@@ -30,14 +33,35 @@ typedef struct zorg_top_level_item {
 } zorg_top_level_item;
 
 struct zorg_top_level_item top_level_items[] = {
-  { tree, "tree" },
-  { date, "date" },
-  { tag_chooser, "tag" },
+  { tree, "Tree" },
+  { file_chooser, "Files" },
+  { date, "Date" },
+  { tag_chooser, "Tags" },
+  { live_data, "Live data" },
+  { settings, "Settings" },
   { top_level_chooser, NULL }};
 
 zorg_mode mode;
+
+/* The whole data read from file or connection.
+   This is a file as prepared by the companion emacs-lisp code.
+*/
 char *file_data;
 unsigned int file_size;
+
+/* The data parsed into an array of lines.
+   The data gets split in place, by poking null characters into it.
+   Heading lines (in the org-mode sense) begin with a digit, which indicates the tree level.
+   The level digit is followed by some optional keyword and tag data.
+   Then comes the actual heading text.
+   Lines beginning with a space are body lines (shown in the leaf-mode display only).
+   A line beginning with a '!' character holds the array of keywords.
+   A line beginning with a ':' character holds the array of tags.
+ */
+unsigned int n_lines;
+char **lines;
+
+/* Variables for the tree-mode display. */
 unsigned int parent;
 unsigned int parent_level;
 unsigned int level;
@@ -45,15 +69,19 @@ int start;
 int end;
 int old_start;
 int old_end;
-unsigned int n_lines;
-char **lines;
+
+/* The keywords line is split into an array of strings. */
 char *keywords_line = NULL;
 unsigned int n_keywords = 0;
 char **keywords = NULL;
+
+/* The tags lines is split into an array of strings. */
 char *tags_line = NULL;
 unsigned int n_tags = 0;
 char **tags = NULL;
 int chosen_tag = -1;
+
+/* The lines which are actually displayed, as indices into the main "lines" array. */
 unsigned int display_n_lines;
 int *display_lines;
 int cursor;
@@ -73,6 +101,10 @@ set_mode(zorg_mode new_mode)
     level = parent_level + 1;
     start = end = -1;
     break;
+  case file_chooser:
+    printf("file chooser mode not implemented\n");
+    set_mode(top_level_chooser);
+    break;
   case date:
     printf("date mode not implemented\n");
     set_mode(top_level_chooser);
@@ -82,6 +114,14 @@ set_mode(zorg_mode new_mode)
     break;
   case tag:
     printf("tags mode not implemented\n");
+    set_mode(top_level_chooser);
+    break;
+  case live_data:
+    printf("live data mode not implemented\n");
+    set_mode(top_level_chooser);
+    break;
+  case settings:
+    printf("settings mode not implemented\n");
     set_mode(top_level_chooser);
     break;
   }
@@ -120,6 +160,9 @@ zorg_middle_button()
       }
     }
     break;
+  case file_chooser:
+    /* todo: change the current file */
+    break;
   case date:
     break;
   case tag_chooser:
@@ -128,6 +171,10 @@ zorg_middle_button()
     set_mode(tag);
     break;
   case tag:
+    break;
+  case live_data:
+    break;
+  case settings:
     break;
   }
 }
@@ -139,6 +186,9 @@ zorg_back_button()
   switch (mode) {
   case top_level_chooser:
     printf("this would quit\n");
+    break;
+  case file_chooser:
+    set_mode(top_level_chooser);
     break;
   case tree:
     printf("going up; level=%c parent_level=%c cursor=%d parent=%d\n", level, parent_level, cursor, parent);
@@ -174,11 +224,10 @@ zorg_back_button()
     }
     break;
   case date:
-    break;
   case tag_chooser:
-    set_mode(top_level_chooser);
-    break;
   case tag:
+  case live_data:
+  case settings:
     set_mode(tag_chooser);
     break;
   }
@@ -237,7 +286,19 @@ zorg_pebble_display_line(unsigned int index)
   case top_level_chooser:
     return top_level_items[index].label;
   case tree:
-    return lines[display_lines[index]];
+    {
+      char *line = lines[display_lines[index]];
+      for (line++; *line == ' '; line++); /* skip the level, and following whitespace */
+      if (*line == '!') {
+	for (; *line != ' '; line++); /* skip the keyword */
+	for (; *line == ' '; line++); /* skip the space after the keyword */
+      }
+      if (*line == ':') {
+	for (; *line != ' '; line++); /* skip the tags */
+	for (; *line == ' '; line++); /* skip the space after the tags */
+      }
+      return line;
+    }
   case date:
     return "date mode not implemented";
   case tag_chooser:
@@ -245,6 +306,9 @@ zorg_pebble_display_line(unsigned int index)
     break;
   case tag:
     return "tag mode not implemented";
+  case live_data:
+    return "live data not implemented";
+    break;
   }
 }
 
@@ -256,32 +320,40 @@ zorg_pebble_display_n_lines()
     return (sizeof(top_level_items) / sizeof(top_level_items[0])) - 1;
   case tree:
     return display_n_lines;
+  case file_chooser:
+    return 0;
   case date:
     return 0;
   case tag_chooser:
     return n_tags;
   case tag:
     return 0;
+  case live_data:
+    return 0;
+  case settings:
+    return 0;
   }
 }
 
-static void
-read_file(char *file_name, unsigned int *file_size_result)
+static char*
+read_local_file(char *file_name, unsigned int *file_size_result)
 {
   struct stat stat_buf;
   int fd;
+  int data_size;
+  char *data_buffer;
 
   if (stat(file_name, &stat_buf) != 0) {
     fprintf(stderr, "Could not stat %s\n", file_name);
     exit(1);
   }
 
-  file_size = stat_buf.st_size;
+  data_size = stat_buf.st_size;
 
-  file_data = (char*)malloc(file_size+1);
+  data_buffer = (char*)malloc(data_size+1);
 
-  if (file_data == NULL) {
-    fprintf(stderr, "Could not malloc buffer of %d bytes\n", file_size+1);
+  if (data_buffer == NULL) {
+    fprintf(stderr, "Could not malloc buffer of %d bytes\n", data_size+1);
     exit(1);
   }
 
@@ -292,69 +364,73 @@ read_file(char *file_name, unsigned int *file_size_result)
     exit(1);
   }
 
-  if (read(fd, file_data, file_size) != file_size) {
-    fprintf(stderr, "Could not read whole file %s (%d bytes)\n", file_name, file_size);
+  if (read(fd, data_buffer, data_size) != data_size) {
+    fprintf(stderr, "Could not read whole file %s (%d bytes)\n", file_name, data_size);
     exit(1);
   }
 
   close(fd);
 
-  fprintf(stderr, "Read file of %d bytes\n", file_size);
+  fprintf(stderr, "Read file of %d bytes\n", data_size);
 
-  file_data[file_size] = '\0';
+  data_buffer[data_size] = '\0';
+
+  *file_size_result = data_size;
+  return data_buffer;
 }
 
-static void
-parse_data()
+static int*
+parse_data(char *data_buffer, unsigned int data_size, int *line_count_p)
 {
   unsigned int i, j;
   char *p;
+  unsigned int line_count = 0;
+  int *displayed_lines_indices;
 
   /* split buffer into lines */
-  for (i = 0; i < file_size; i++) {
-    if (file_data[i] == '\n') {
-      file_data[i] = '\0';
-      n_lines++;
-      // fprintf(stderr, "line %d\n", n_lines);
+  for (i = 0; i < data_size; i++) {
+    if (data_buffer[i] == '\n') {
+      data_buffer[i] = '\0';
+      line_count++;
     }
   }
 
-  lines = (char**)malloc(n_lines * sizeof(char*));
+  lines = (char**)malloc(line_count * sizeof(char*));
   if (lines == NULL) {
     fprintf(stderr, "Could not allocate lines array\n");
     exit(1);
   }
 
-  display_lines = (int*)malloc(n_lines * sizeof(int));
-  if (display_lines == NULL) {
+  displayed_lines_indices = (int*)malloc(line_count * sizeof(int));
+  if (displayed_lines_indices == NULL) {
     fprintf(stderr, "Could not allocate displayed lines array\n");
     exit(1);
   }
 
-  printf("allocated display_lines=%p, lines is %p\n", display_lines, lines);
+  // printf("allocated displayed_lines_indices=%p, lines is %p\n", displayed_lines_indices, lines);
 
-  lines[0] = file_data;
+  lines[0] = data_buffer;
 
-  for (j = 1, i = 1; i < file_size; i++) {
-    if (file_data[i] == '\0') {
-      // fprintf(stderr, "recording line %d at offset %d (%p)\n", j, i, &(file_data[i+1]));
-      lines[j++] = &(file_data[i+1]);
+  for (j = 1, i = 1; i < data_size; i++) {
+    if (data_buffer[i] == '\0') {
+      // fprintf(stderr, "recording line %d at offset %d (%p)\n", j, i, &(data_buffer[i+1]));
+      lines[j++] = &(data_buffer[i+1]);
     }
   }
 
-  fprintf(stderr, "Setting end marker in %d\n", j-1);
+  // fprintf(stderr, "Setting end marker in %d\n", j-1);
   lines[j-1] = NULL;
 
 #if 1
-  for (i = 0; i < n_lines; i++) {
+  for (i = 0; i < line_count; i++) {
     printf("Line %d: %s\n", i, lines[i]);
   }
 #endif
-  for (i = 0; i < n_lines; i++) {
-    printf("looking at line %d: %s\n", i, lines[i]);
+  for (i = 0; i < line_count; i++) {
+    // printf("looking at line %d: %s\n", i, lines[i]);
     if (lines[i] != NULL) {
       switch (lines[i][0]) {
-      case '|':
+      case '!':
 	keywords_line = lines[i];
 	for (p = keywords_line; *p != '\0'; p++) {
 	  if (*p == ' ') {
@@ -382,7 +458,7 @@ parse_data()
 	  }
 	}
 	tags = (char**)malloc(sizeof(char*) * (n_tags+1));
-	if (keywords == NULL) {
+	if (tags == NULL) {
 	  printf("Could not allocate tags array\n");
 	  exit(1);
 	}
@@ -413,24 +489,26 @@ parse_data()
     }
   }
 #endif
+
+  *line_count_p = line_count;
+  return displayed_lines_indices;
 }
 
 int
 main(int argc, char **argv, char **env)
 {
   mode = top_level_chooser;
-  n_lines = 2;		/* for initial line, and final line */
 
   if (argc != 2) {
     fprintf(stderr, "Usage: zorg-pebble file\n");
     exit(1);
   }
 
-  read_file(argv[1], &file_size);
+  file_data = read_local_file(argv[1], &file_size);
 
-  parse_data();
+  display_lines = parse_data(file_data, file_size, &n_lines);
 
-  printf("about to start main block, display_lines=%p lines=%p\n", display_lines, lines);
+  printf("about to start main block, display_lines=%p lines=%p n_lines=%d\n", display_lines, lines, n_lines);
 
   {
     int running;
@@ -457,6 +535,8 @@ main(int argc, char **argv, char **env)
       switch (mode) {
       case top_level_chooser:
 	break;
+      case file_chooser:
+	break;
       case tree:
 	if ((start == -1) || (end == -1)) {
 	  zorg_pebble_rescan_tree_level();
@@ -464,7 +544,13 @@ main(int argc, char **argv, char **env)
 	break;
       case date:
 	break;
+      case tag_chooser:
+	break;
       case tag:
+	break;
+      case live_data:
+	break;
+      case settings:
 	break;
       }
 
