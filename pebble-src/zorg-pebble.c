@@ -120,6 +120,7 @@ set_mode(zorg_mode new_mode)
     display_n_lines = (sizeof(top_level_items) / sizeof(top_level_items[0])) - 1;
     /* doesn't use display_lines, as zorg_pebble_display_line returns
        a string from top_level_items directly */
+    display_lines = NULL;
     break;
   case tree:
     parent = 0;
@@ -128,7 +129,6 @@ set_mode(zorg_mode new_mode)
     start = end = -1;
     break;
   case file_chooser:
-#if 1
     {
       struct dirent *dir_buf;
       DIR *dir = opendir(zorg_dir_name);
@@ -151,6 +151,7 @@ set_mode(zorg_mode new_mode)
       printf("%d matches, %d bytes\n", n_lines, file_size);
       lines = (char**)malloc(n_lines*sizeof(char*));
       file_data = (char*)malloc(file_size);
+      display_lines = NULL;	/* not using this */
 
       i = 0; p = file_data;
       while (dir_buf = readdir(dir)) {
@@ -173,10 +174,6 @@ set_mode(zorg_mode new_mode)
 	printf("Line %d: %p %s\n", i, lines[i], lines[i]);
       }
     }
-#else
-    printf("file chooser mode not implemented\n");
-    set_mode(top_level_chooser);
-#endif
     break;
   case date:
     printf("date mode not implemented\n");
@@ -244,6 +241,7 @@ zorg_middle_button()
       unload_data();
       data_source = local_file;
       load_local_file(currently_selected_file);
+      set_mode(tree);
       free(currently_selected_file);
       currently_selected_file = NULL;
     }
