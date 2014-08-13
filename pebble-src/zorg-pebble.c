@@ -16,6 +16,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <dirent.h>
+#include <string.h>
 
 typedef enum zorg_mode {
   top_level_chooser,
@@ -97,6 +99,8 @@ unsigned int display_n_lines;
 int *display_lines;
 int cursor;
 
+static void unload_data();
+
 static void
 set_mode(zorg_mode new_mode)
 {
@@ -122,8 +126,56 @@ set_mode(zorg_mode new_mode)
     start = end = -1;
     break;
   case file_chooser:
+#if 1
+    {
+      char *zorg_dir_name = "/tmp";
+      struct dirent *dir_buf;
+      DIR *dir = opendir(zorg_dir_name);
+      unsigned int i;
+      char *p;
+      n_lines = 0;
+      file_size = 0;
+      unload_data();
+      while (dir_buf = readdir(dir)) {
+	char *name = dir_buf->d_name;
+	int name_len = strlen(name);
+	if (strncmp(name+name_len-5, ".zorg", 5) == 0) {
+	  printf("name = %s\n", name);
+	  n_lines++;
+	  file_size += name_len + 1;
+	}
+      }
+      rewinddir(dir);
+      
+      printf("%d matches, %d bytes\n", n_lines, file_size);
+      lines = (char**)malloc(n_lines*sizeof(char*));
+      file_data = (char*)malloc(file_size);
+
+      i = 0; p = file_data;
+      while (dir_buf = readdir(dir)) {
+	char *name = dir_buf->d_name;
+	int name_len = strlen(name);
+	if (strncmp(name+name_len-5, ".zorg", 5) == 0) {
+	  strcpy(p, name);
+	  lines[i] = p;
+	  printf("[%d] p = %p = %s\n", i, lines[i], lines[i]);
+	  p += name_len + 1;
+	  i++;
+	  printf("name = %s\n", name);
+	}
+      }
+      closedir(dir);
+    }
+    {
+      unsigned int i;
+      for (i = 0; i < n_lines; i++) {
+	printf("Line %d: %p %s\n", i, lines[i], lines[i]);
+      }
+    }
+#else
     printf("file chooser mode not implemented\n");
     set_mode(top_level_chooser);
+#endif
     break;
   case date:
     printf("date mode not implemented\n");
@@ -536,14 +588,20 @@ load_local_file(char *filename)
 static void
 unload_local_file()
 {
-  free(file_data);
-  file_data = NULL;
+  if (file_data != NULL) {
+    free(file_data);
+    file_data = NULL;
+  }
   file_size = 0;
-  free(lines);
-  lines = NULL;
+  if (lines != NULL) {
+    free(lines);
+    lines = NULL;
+  }
   n_lines = 0;
-  free(display_lines);
-  display_lines = NULL;
+  if (display_lines != NULL) {
+    free(display_lines);
+    display_lines = NULL;
+  }
   display_n_lines = 0;
 
   data_source = none;
