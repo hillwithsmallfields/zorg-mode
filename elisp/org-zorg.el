@@ -44,7 +44,12 @@ FFile to export into: ")
 	    ;; convert keyword to index in file-level list of keywords
 	    (beginning-of-line 1) (forward-char 2)
 	    (when (looking-at org-todo-regexp)
-	      (replace-match (format "!%d" (position (match-string-no-properties 1) file-keywords :test 'string=))))
+	      (let* ((keyword  (match-string-no-properties 1))
+		     (pos (position keyword (cdr file-keywords) :test 'string=)))
+		(if pos
+		    (replace-match (format "!%d" pos))
+		  ;; todo: fix picking up the file keyword list properly
+		(message "Warning: %S not in keywords!" keyword))))
 
 	    ;; convert tags into list of indices in file-level list of keywords
 	    (when line-tags
