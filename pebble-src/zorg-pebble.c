@@ -99,6 +99,8 @@ unsigned int display_n_lines;
 int *display_lines;
 int cursor;
 
+char *zorg_dir_name = "/tmp";
+
 static void unload_data();
 
 static void
@@ -128,7 +130,6 @@ set_mode(zorg_mode new_mode)
   case file_chooser:
 #if 1
     {
-      char *zorg_dir_name = "/tmp";
       struct dirent *dir_buf;
       DIR *dir = opendir(zorg_dir_name);
       unsigned int i;
@@ -198,6 +199,8 @@ set_mode(zorg_mode new_mode)
   }
  }
 
+static void load_local_file(char *filename);
+
 static void
 zorg_middle_button()
 {
@@ -233,6 +236,17 @@ zorg_middle_button()
     break;
   case file_chooser:
     /* todo: change the current file */
+    {
+      printf("Selecting file %s\n", lines[cursor]);
+      char *new_file = lines[cursor];
+      currently_selected_file = (char*)malloc(strlen(new_file) + strlen(zorg_dir_name) + 1);
+      sprintf(currently_selected_file, "%s/%s", zorg_dir_name, new_file);
+      unload_data();
+      data_source = local_file;
+      load_local_file(currently_selected_file);
+      free(currently_selected_file);
+      currently_selected_file = NULL;
+    }
     break;
   case date:
     break;
@@ -359,6 +373,8 @@ zorg_pebble_display_line(unsigned int index)
   switch (mode) {
   case top_level_chooser:
     return top_level_items[index].label;
+  case file_chooser:
+    return lines[index];
   case tree:
     {
       char *line = lines[display_lines[index]];
@@ -401,7 +417,7 @@ zorg_pebble_display_n_lines()
   case tree:
     return display_n_lines;
   case file_chooser:
-    return 0;
+    return n_lines;
   case date:
     return 0;
   case tag_chooser:
@@ -718,7 +734,6 @@ main(int argc, char **argv, char **env)
 
       update_display_lines();
 
-      // if ((file_data != NULL) && (display_lines != NULL) && (lines != NULL))
       {
 	int i;
 	if (mode == tree) {
