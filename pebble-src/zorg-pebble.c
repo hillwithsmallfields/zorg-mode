@@ -540,6 +540,7 @@ parse_data(char *data_buffer, unsigned int data_size, int *line_count_p)
 	for (p = keywords_line; *p != '\0'; p++) {
 	  if (*p == ' ') {
 	    *p = '\0';
+	    printf("Recorded keyword %d as being start of %s\n", j, p+1);
 	    keywords[j++] = p+1;
 	  }
 	}
@@ -571,7 +572,7 @@ parse_data(char *data_buffer, unsigned int data_size, int *line_count_p)
   }
 #if 1
   if (keywords != NULL) {
-    printf("Keywords:\n");
+    printf("Keywords[%d]:\n", n_keywords);
     for (i = 0; i < n_keywords; i++) {
       printf("  %d: %s\n", i, keywords[i]);
     }
