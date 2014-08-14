@@ -619,6 +619,21 @@ unload_local_file()
   }
   display_n_lines = 0;
 
+  tags_line = NULL;
+  keywords_line = NULL;
+
+  if (keywords != NULL) {
+    free(keywords);
+    n_keywords = 0;
+    keywords = NULL;
+  }
+
+  if (tags != NULL) {
+    free(tags);
+    n_tags = 0;
+    tags = NULL;
+  }
+
   data_source = none;
 }
 
