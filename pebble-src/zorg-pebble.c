@@ -4,10 +4,12 @@
  */
 
 /* todo: do something different on reaching a leaf node */
+/* todo: don't unload file data until loading another file */
 /* todo: tag-based selection */
 /* todo: date/time based selection */
 /* todo: changing states, and sending them back using pebble's DataLogging */
 /* todo: live data */
+/* todo: loading data from stream */
 /* todo: settings */
 
 #include <stdio.h>
@@ -61,6 +63,7 @@ char *currently_selected_file = NULL;
 */
 char *file_data;
 unsigned int file_size;
+int file_changed = 0;
 
 /* The data parsed into an array of lines.
    The data gets split in place, by poking null characters into it.
@@ -99,6 +102,16 @@ unsigned int display_n_lines;
 int *display_lines;
 int cursor;
 
+/* Another set of line, for the directory display.  This is stored
+   separately, so that if we go into the directory display and then
+   back out of it without selecting a file, the original file can be
+   left undisturbed. */
+
+char *directory_data;
+unsigned int directory_data_size;
+unsigned int n_directory_lines;
+char **directory_lines;
+
 char *zorg_dir_name = "/tmp";
 
 static void unload_data();
@@ -117,10 +130,10 @@ set_mode(zorg_mode new_mode)
   cursor = 0;			/* jump back to the top */
   switch (new_mode) {
   case top_level_chooser:
+    /* todo: make these a separate store, just like I've done for the directory storage */
     display_n_lines = (sizeof(top_level_items) / sizeof(top_level_items[0])) - 1;
     /* doesn't use display_lines, as zorg_pebble_display_line returns
        a string from top_level_items directly */
-    display_lines = NULL;
     break;
   case tree:
     parent = 0;
@@ -130,48 +143,48 @@ set_mode(zorg_mode new_mode)
     break;
   case file_chooser:
     {
-      struct dirent *dir_buf;
-      DIR *dir = opendir(zorg_dir_name);
-      unsigned int i;
-      char *p;
-      n_lines = 0;
-      file_size = 0;
-      unload_data();
-      while (dir_buf = readdir(dir)) {
-	char *name = dir_buf->d_name;
-	int name_len = strlen(name);
-	if (strncmp(name+name_len-5, ".zorg", 5) == 0) {
-	  printf("name = %s\n", name);
-	  n_lines++;
-	  file_size += name_len + 1;
+      if (directory_data == NULL) {
+	struct dirent *dir_buf;
+	DIR *dir = opendir(zorg_dir_name);
+	unsigned int i;
+	char *p;
+	n_directory_lines = 0;
+	directory_data_size = 0;
+	while (dir_buf = readdir(dir)) {
+	  char *name = dir_buf->d_name;
+	  int name_len = strlen(name);
+	  if (strncmp(name+name_len-5, ".zorg", 5) == 0) {
+	    printf("name = %s\n", name);
+	    n_directory_lines++;
+	    directory_data_size += name_len + 1;
+	  }
 	}
-      }
-      rewinddir(dir);
+	rewinddir(dir);
       
-      printf("%d matches, %d bytes\n", n_lines, file_size);
-      lines = (char**)malloc(n_lines*sizeof(char*));
-      file_data = (char*)malloc(file_size);
-      display_lines = NULL;	/* not using this */
+	printf("%d matches, %d bytes\n", n_directory_lines, directory_data_size);
+	directory_lines = (char**)malloc(n_directory_lines*sizeof(char*));
+	directory_data = (char*)malloc(directory_data_size);
 
-      i = 0; p = file_data;
-      while (dir_buf = readdir(dir)) {
-	char *name = dir_buf->d_name;
-	int name_len = strlen(name);
-	if (strncmp(name+name_len-5, ".zorg", 5) == 0) {
-	  strcpy(p, name);
-	  lines[i] = p;
-	  printf("[%d] p = %p = %s\n", i, lines[i], lines[i]);
-	  p += name_len + 1;
-	  i++;
-	  printf("name = %s\n", name);
+	i = 0; p = directory_data;
+	while (dir_buf = readdir(dir)) {
+	  char *name = dir_buf->d_name;
+	  int name_len = strlen(name);
+	  if (strncmp(name+name_len-5, ".zorg", 5) == 0) {
+	    strcpy(p, name);
+	    directory_lines[i] = p;
+	    printf("[%d] p = %p = %s\n", i, directory_lines[i], directory_lines[i]);
+	    p += name_len + 1;
+	    i++;
+	    printf("name = %s\n", name);
+	  }
 	}
+	closedir(dir);
       }
-      closedir(dir);
     }
     {
       unsigned int i;
-      for (i = 0; i < n_lines; i++) {
-	printf("Line %d: %p %s\n", i, lines[i], lines[i]);
+      for (i = 0; i < n_directory_lines; i++) {
+	printf("Line %d: %p %s\n", i, directory_lines[i], directory_lines[i]);
       }
     }
     break;
@@ -234,8 +247,8 @@ zorg_middle_button()
   case file_chooser:
     /* todo: change the current file */
     {
-      printf("Selecting file %s\n", lines[cursor]);
-      char *new_file = lines[cursor];
+      printf("Selecting file %s\n", directory_lines[cursor]);
+      char *new_file = directory_lines[cursor];
       currently_selected_file = (char*)malloc(strlen(new_file) + strlen(zorg_dir_name) + 1);
       sprintf(currently_selected_file, "%s/%s", zorg_dir_name, new_file);
       unload_data();
@@ -244,6 +257,7 @@ zorg_middle_button()
       set_mode(tree);
       free(currently_selected_file);
       currently_selected_file = NULL;
+      file_changed = 1;
     }
     break;
   case date:
@@ -372,7 +386,7 @@ zorg_pebble_display_line(unsigned int index)
   case top_level_chooser:
     return top_level_items[index].label;
   case file_chooser:
-    return lines[index];
+    return directory_lines[index];
   case tree:
     {
       char *line = lines[display_lines[index]];
@@ -415,7 +429,7 @@ zorg_pebble_display_n_lines()
   case tree:
     return display_n_lines;
   case file_chooser:
-    return n_lines;
+    return n_directory_lines;
   case date:
     return 0;
   case tag_chooser:
@@ -692,6 +706,10 @@ update_display_lines()
   case file_chooser:
     break;
   case tree:
+    if (file_changed) {
+      file_changed = 0;
+      unload_data();
+    }
     load_data();
     if ((start == -1) || (end == -1)) {
       zorg_pebble_rescan_tree_level();
