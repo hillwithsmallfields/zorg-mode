@@ -112,7 +112,7 @@ unsigned int directory_data_size;
 unsigned int n_directory_lines;
 char **directory_lines;
 
-char *zorg_dir_name = "/tmp";
+char *zorg_dir_name = "/home/jcgs/tmp";
 
 static void unload_data();
 
@@ -130,10 +130,8 @@ set_mode(zorg_mode new_mode)
   cursor = 0;			/* jump back to the top */
   switch (new_mode) {
   case top_level_chooser:
-    /* todo: make these a separate store, just like I've done for the directory storage */
-    display_n_lines = (sizeof(top_level_items) / sizeof(top_level_items[0])) - 1;
-    /* doesn't use display_lines, as zorg_pebble_display_line returns
-       a string from top_level_items directly */
+    /* doesn't use display_lines etc, as zorg_pebble_display_line
+       returns a string from top_level_items directly */
     break;
   case tree:
     parent = 0;
@@ -257,7 +255,7 @@ zorg_middle_button()
       set_mode(tree);
       free(currently_selected_file);
       currently_selected_file = NULL;
-      file_changed = 1;
+      file_changed = 0;
     }
     break;
   case date:
@@ -706,11 +704,14 @@ update_display_lines()
   case file_chooser:
     break;
   case tree:
+    /* fixme: I think this may be a bit confused, probably should have loaded the data by now */
+#if 1
     if (file_changed) {
       file_changed = 0;
       unload_data();
     }
     load_data();
+#endif
     if ((start == -1) || (end == -1)) {
       zorg_pebble_rescan_tree_level();
     }
