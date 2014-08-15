@@ -11,6 +11,7 @@
 /* todo: live data */
 /* todo: loading data from stream */
 /* todo: settings */
+/* todo: commands from phone to bring up particular agendas according to context e.g. location, time */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -51,6 +52,9 @@ struct zorg_top_level_item top_level_items[] = {
   { live_data, "Live data" },
   { settings, "Settings" },
   { top_level_chooser, NULL }};
+
+#define FILTER_SEARCH_STRING_MAX 16
+char filter_search_string[FILTER_SEARCH_STRING_MAX];
 
 zorg_mode mode;
 
@@ -191,11 +195,12 @@ set_mode(zorg_mode new_mode)
     set_mode(top_level_chooser);
     break;
   case tag_chooser:
+    printf("Starting choosing a tag\n");
     chosen_tag = -1;
     break;
   case tag:
-    printf("tags mode not implemented\n");
-    set_mode(top_level_chooser);
+    /* todo: ensure a file is loaded, and filter to produce display_lines by tag */
+    snprintf(filter_search_string, FILTER_SEARCH_STRING_MAX, "%d", chosen_tag);
     break;
   case live_data:
     /* todo: any live data initialization (register event handlers etc) */
@@ -266,6 +271,7 @@ zorg_middle_button()
     set_mode(tag);
     break;
   case tag:
+    set_mode(tag_chooser);
     break;
   case live_data:
     /* maybe update, but it should probably do that on ticks anyway */
@@ -328,6 +334,39 @@ zorg_back_button()
   case settings:
     set_mode(tag_chooser);
     break;
+  }
+}
+
+static void
+zorg_pebble_rescan_tags()
+{
+  int scan;
+  display_n_lines = 0;
+
+  for (scan = 0; scan < n_lines; scan++) {
+    char *p;
+    int hit = 0;
+
+    for (p = lines[scan]; *p != 0; p++) {
+      char c = *p;
+
+      if (c == ':') {
+	char *q = filter_search_string;
+	char d = *q;
+	p++;
+	while (c == d) {
+	  c = *p++;
+	  d = *q++;
+	}
+	if (d == '\0') {
+	  hit = 1;
+	  break;
+	}
+      }
+    }
+    if (hit) {
+      display_lines[display_n_lines++] = scan;
+    }
   }
 }
 
@@ -721,6 +760,7 @@ update_display_lines()
   case tag_chooser:
     break;
   case tag:
+    zorg_pebble_rescan_tags();
     break;
   case live_data:
     break;
