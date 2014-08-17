@@ -44,6 +44,7 @@ typedef struct zorg_top_level_item {
   char *label;
 } zorg_top_level_item;
 
+/* This forms the root node of the displayed tree */
 struct zorg_top_level_item top_level_items[] = {
   { tree, "Tree" },
   { file_chooser, "Files" },
@@ -118,6 +119,7 @@ char **directory_lines;
 
 char *zorg_dir_name = "/home/jcgs/tmp";
 
+static void load_data();
 static void unload_data();
 
 static void
@@ -200,7 +202,9 @@ set_mode(zorg_mode new_mode)
     break;
   case tag:
     /* todo: ensure a file is loaded, and filter to produce display_lines by tag */
+    printf("selecting tag %d = %s\n", chosen_tag, tags[chosen_tag]);
     snprintf(filter_search_string, FILTER_SEARCH_STRING_MAX, "%d", chosen_tag);
+    load_data();
     break;
   case live_data:
     /* todo: any live data initialization (register event handlers etc) */
@@ -341,11 +345,14 @@ static void
 zorg_pebble_rescan_tags()
 {
   int scan;
+  printf("in zorg_pebble_rescan_tags(%s)\n", filter_search_string);
   display_n_lines = 0;
 
   for (scan = 0; scan < n_lines; scan++) {
     char *p;
     int hit = 0;
+
+    printf("Looking for tag %s in line %d: %s\n", filter_search_string, scan, lines[scan]);
 
     for (p = lines[scan]; *p != 0; p++) {
       char c = *p;
@@ -353,10 +360,13 @@ zorg_pebble_rescan_tags()
       if (c == ':') {
 	char *q = filter_search_string;
 	char d = *q;
-	p++;
+	p++;			/* skip the ':' */
+	c = *p++;
+	printf("comparing %s with %s (%c with %c)\n", q, p, d, c);
 	while (c == d) {
 	  c = *p++;
 	  d = *q++;
+	  printf("comparing %c with %c\n", d, c);
 	}
 	if (d == '\0') {
 	  hit = 1;
