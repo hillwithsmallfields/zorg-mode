@@ -58,3 +58,35 @@ The top-level chooser and the file selector are coded separately, and
 don't use the file data at all.
 
 The tag chooser displays data from the tag line of the file.
+
+Plans
+=====
+
+Push data from phone
+--------------------
+
+The phone will be able to send a file, line by line.
+
+Return updates to phone
+-----------------------
+
+Changing state (keywords, e.g. TODO --> DONE) will use the Pebble
+Logging facility to queue them up, sending org "paths" to tell the
+companion app what to update.
+
+Push display choice from phone
+------------------------------
+
+The phone will be able to tell the watch app to switch to the display
+for a particular tag or time (tags being chosen geographically
+according to GPS, for example).
+
+Display on the phone
+--------------------
+
+Since there'll be a companion app on the phone, that has to be able to
+read the file and send it as lines, I might extend that into being a
+proper zorg-mode browser map in its own right.
+
+I might make it read and write actual org files, too, as it won't have
+the tight space constraints of the watch app.
