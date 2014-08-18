@@ -21,6 +21,7 @@
 #include <fcntl.h>
 #include <dirent.h>
 #include <string.h>
+#include <time.h>
 
 typedef enum zorg_mode {
   top_level_chooser,
@@ -121,7 +122,8 @@ char *zorg_dir_name = "/home/jcgs/tmp";
 
 static void load_data();
 static void unload_data();
-static void zorg_pebble_rescan_tags();
+static void zorg_pebble_scan_tags();
+static void zorg_pebble_scan_dates();
 
 static void
 set_mode(zorg_mode new_mode)
@@ -194,8 +196,11 @@ set_mode(zorg_mode new_mode)
     }
     break;
   case date:
-    printf("date mode not implemented\n");
-    set_mode(top_level_chooser);
+    {
+      zorg_pebble_scan_dates();
+      printf("date mode not implemented\n");
+      set_mode(top_level_chooser);
+    }
     break;
   case tag_chooser:
     printf("Starting choosing a tag\n");
@@ -206,7 +211,7 @@ set_mode(zorg_mode new_mode)
     printf("selecting tag %d = %s\n", chosen_tag, tags[chosen_tag]);
     snprintf(filter_search_string, FILTER_SEARCH_STRING_MAX, "%d", chosen_tag);
     load_data();
-    zorg_pebble_rescan_tags();
+    zorg_pebble_scan_tags();
     break;
   case live_data:
     /* todo: any live data initialization (register event handlers etc) */
@@ -344,10 +349,10 @@ zorg_back_button()
 }
 
 static void
-zorg_pebble_rescan_tags()
+zorg_pebble_scan_tags()
 {
   int scan;
-  printf("in zorg_pebble_rescan_tags(%s)\n", filter_search_string);
+  printf("in zorg_pebble_scan_tags(%s)\n", filter_search_string);
   display_n_lines = 0;
 
   for (scan = 0; scan < n_lines; scan++) {
@@ -376,6 +381,54 @@ zorg_pebble_rescan_tags()
 	  break;
 	}
       }
+    }
+    if (hit) {
+      display_lines[display_n_lines++] = scan;
+      printf("Added line %d to display (now %d lines)\n", scan, display_n_lines);
+    }
+  }
+}
+
+static void
+zorg_pebble_scan_dates()
+{
+  int scan;
+  printf("in zorg_pebble_scan_dates(%s)\n", filter_search_string);
+  display_n_lines = 0;
+
+  for (scan = 0; scan < n_lines; scan++) {
+    char *p;
+    int hit = 0;
+
+    // printf("Looking for tag %s in line %d: %s\n", filter_search_string, scan, lines[scan]);
+
+    for (p = lines[scan]; *p != 0; p++) {
+
+
+      /* todo: fill display_lines with just one of each date, in order */
+
+#if 0
+      /* from zorg_pebble_scan_tags */
+      char c = *p;
+
+      if (c == ':') {
+	char *q = filter_search_string;
+	char d = *q++;
+	p++;			/* skip the ':' */
+	c = *p++;
+	// printf("comparing %s with %s (%c with %c)\n", q-1, p-1, d, c);
+	while (c == d) {
+	  c = *p++;
+	  d = *q++;
+	  /* printf("comparing %c with %c\n", d, c); */
+	}
+	if (d == '\0') {
+	  hit = 1;
+	  // printf("matched!\n");
+	  break;
+	}
+      }
+#endif
     }
     if (hit) {
       display_lines[display_n_lines++] = scan;
