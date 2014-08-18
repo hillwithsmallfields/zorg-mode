@@ -121,6 +121,7 @@ char *zorg_dir_name = "/home/jcgs/tmp";
 
 static void load_data();
 static void unload_data();
+static void zorg_pebble_rescan_tags();
 
 static void
 set_mode(zorg_mode new_mode)
@@ -205,6 +206,7 @@ set_mode(zorg_mode new_mode)
     printf("selecting tag %d = %s\n", chosen_tag, tags[chosen_tag]);
     snprintf(filter_search_string, FILTER_SEARCH_STRING_MAX, "%d", chosen_tag);
     load_data();
+    zorg_pebble_rescan_tags();
     break;
   case live_data:
     /* todo: any live data initialization (register event handlers etc) */
@@ -275,7 +277,7 @@ zorg_middle_button()
     set_mode(tag);
     break;
   case tag:
-    set_mode(tag_chooser);
+    /* todo: display individual entry */
     break;
   case live_data:
     /* maybe update, but it should probably do that on ticks anyway */
@@ -331,11 +333,11 @@ zorg_back_button()
     break;
   case date:
   case tag_chooser:
-  case tag:
   case live_data:
+  case settings:
     set_mode(top_level_chooser);
     break;
-  case settings:
+  case tag:
     set_mode(tag_chooser);
     break;
   }
@@ -352,30 +354,32 @@ zorg_pebble_rescan_tags()
     char *p;
     int hit = 0;
 
-    printf("Looking for tag %s in line %d: %s\n", filter_search_string, scan, lines[scan]);
+    // printf("Looking for tag %s in line %d: %s\n", filter_search_string, scan, lines[scan]);
 
     for (p = lines[scan]; *p != 0; p++) {
       char c = *p;
 
       if (c == ':') {
 	char *q = filter_search_string;
-	char d = *q;
+	char d = *q++;
 	p++;			/* skip the ':' */
 	c = *p++;
-	printf("comparing %s with %s (%c with %c)\n", q, p, d, c);
+	// printf("comparing %s with %s (%c with %c)\n", q-1, p-1, d, c);
 	while (c == d) {
 	  c = *p++;
 	  d = *q++;
-	  printf("comparing %c with %c\n", d, c);
+	  /* printf("comparing %c with %c\n", d, c); */
 	}
 	if (d == '\0') {
 	  hit = 1;
+	  // printf("matched!\n");
 	  break;
 	}
       }
     }
     if (hit) {
       display_lines[display_n_lines++] = scan;
+      printf("Added line %d to display (now %d lines)\n", scan, display_n_lines);
     }
   }
 }
@@ -435,6 +439,7 @@ zorg_pebble_display_line(unsigned int index)
   case file_chooser:
     return directory_lines[index];
   case tree:
+  case tag:
     {
       char *line = lines[display_lines[index]];
       for (line++; *line == ' '; line++); /* skip the level, and following whitespace */
@@ -452,8 +457,6 @@ zorg_pebble_display_line(unsigned int index)
     return "date mode not implemented";
   case tag_chooser:
     return tags[index];
-  case tag:
-    return "tag mode not implemented";
   case live_data:
     switch (index) {
     case 0: return "Time will go here";
@@ -474,6 +477,7 @@ zorg_pebble_display_n_lines()
   case top_level_chooser:
     return (sizeof(top_level_items) / sizeof(top_level_items[0])) - 1;
   case tree:
+  case tag:
     return display_n_lines;
   case file_chooser:
     return n_directory_lines;
@@ -481,8 +485,6 @@ zorg_pebble_display_n_lines()
     return 0;
   case tag_chooser:
     return n_tags;
-  case tag:
-    return 0;
   case live_data:
     return 4;
   case settings:
@@ -770,7 +772,6 @@ update_display_lines()
   case tag_chooser:
     break;
   case tag:
-    zorg_pebble_rescan_tags();
     break;
   case live_data:
     break;
