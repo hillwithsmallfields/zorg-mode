@@ -12,6 +12,17 @@
 ;;; cycling a keyword should go back.  The tags line begins with a
 ;;; colon, and has a colon before each tag, and none at the end.
 
+(defun org-dates-in-buffer ()
+  "Return a list of the dates in the current buffer."
+  (save-excursion
+    (let ((results nil))
+      (goto-char (point-min))
+      (while (re-search-forward "<\\([0-9]\\{4\\}-[0-9][0-9]-[0-9][0-9] [A-Z][a-z][a-z]\\( [0-9:]+\\)?\\)>" (point-max) t)
+	(let ((date (match-string-no-properties 1)))
+	  (unless (member date results)
+	    (push date results))))
+      (sort results 'string<))))
+
 (defun org-export-to-zorg (org-file zorg-file)
   "Convert ORG-FILE to ZORG-FILE."
   (interactive "fFile to export from:
@@ -78,8 +89,17 @@ FFile to export into: ")
 	      "\n")
       (insert ":"
 	      (mapconcat 'identity file-tags ":")
-	      "\n"))
-    (basic-save-buffer))
-  )
+	      "\n")
+      ;; todo: output list of dates, in some compact form
+      )
+    (basic-save-buffer)))
+
+(defun org-export-directory-to-zorg (org-dir zorg-dir)
+  "Export all .org files in ORG-DIR to ZORG-DIR."
+  (interactive "DExport org files from: 
+DExport to: ")
+  (dolist (org-file (directory-files org-dir t "\\.org$" t))
+    (org-export-to-zorg org-file (expand-file-name (file-name-nondirectory org-file)
+						   zorg-dir))))
 
 ;;;; org-zorg.el ends here
