@@ -1,4 +1,4 @@
-CFLAGS=-c -Wall
+CFLAGS=-g -c -Wall
 LDFLAGS=
 UTILSOURCES=zorg-data.c zorg-actions.c zorg-files.c zorg-stream.c
 TOPLEVELS=zorg-pebble.c zorg-cmd.c
