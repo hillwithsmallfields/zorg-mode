@@ -91,7 +91,7 @@ zorg_pebble_scan_tags()
     char *p;
     int hit = 0;
 
-    // printf("Looking for tag %s in line %d: %s\n", filter_search_string, scan, lines[scan]);
+    printf("Looking for tag %s in line %d: %s\n", filter_search_string, scan, lines[scan]);
 
     for (p = lines[scan]; *p != 0; p++) {
       char c = *p;
@@ -101,16 +101,19 @@ zorg_pebble_scan_tags()
 	char d = *q++;
 	p++;			/* skip the ':' */
 	c = *p++;
-	// printf("comparing %s with %s (%c with %c)\n", q-1, p-1, d, c);
+	printf("comparing %s with %s (%c with %c)\n", q-1, p-1, d, c);
 	while (c == d) {
 	  c = *p++;
 	  d = *q++;
-	  /* printf("comparing %c with %c\n", d, c); */
+	  printf("comparing %c with %c\n", d, c);
 	}
 	if (d == '\0') {
 	  hit = 1;
-	  // printf("matched!\n");
+	  printf("matched!\n");
 	  break;
+	} else {
+	  /* back off one, to re-scan the : */
+	  p--;
 	}
       }
     }
