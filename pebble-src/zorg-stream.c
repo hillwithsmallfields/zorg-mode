@@ -1,6 +1,13 @@
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "zorg.h"
+
+void
+add_line(char *line)
+{
+  printf("adding line: %s\n", line);
+}
 
 void
 load_remote_stream(char *stream_name)

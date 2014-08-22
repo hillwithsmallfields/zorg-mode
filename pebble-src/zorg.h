@@ -112,5 +112,6 @@ extern void load_local_file(char *filename);
 extern void unload_local_file();
 
 /* zorg-stream.c */
+extern void add_line(char *line);
 extern void load_remote_stream(char *stream_name);
 extern void unload_remote_stream();

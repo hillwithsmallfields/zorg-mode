@@ -16,15 +16,29 @@ static char *test_data[] = {
   "2 Third second-level item within second top-level item",
   NULL};
 
+#define SPECIAL_MAX 256
+
 int
 main(int argc, char **argv, char **env)
 {
   char **p;
+  unsigned int lines = 0, chars = 0;
+  char special[SPECIAL_MAX];
 
-  for (p = test_data[0];
+  for (p = test_data;
        *p != NULL;
        p++) {
-    printf("Got test line: %s\n", *p);
+    lines++;
+    chars += strlen(*p) + 1;
+  }
+
+  snprintf(special, SPECIAL_MAX, "#/usr/local/bin/zorg %d %d\n", lines, chars);
+  add_line(special);
+
+  for (p = test_data;
+       *p != NULL;
+       p++) {
+    add_line(*p);
   }
 
   exit(0);
