@@ -1,13 +1,14 @@
 CFLAGS=-c -Wall
 LDFLAGS=
-SOURCES=zorg-pebble.c zorg-data.c zorg-actions.c zorg-files.c zorg-stream.c
-OBJECTS=$(SOURCES:.c=.o)
-EXECUTABLE=zorg
+UTILSOURCES=zorg-data.c zorg-actions.c zorg-files.c zorg-stream.c
+TOPLEVELS=zorg-pebble.c zorg-cmd.c
+UTILOBJECTS=$(UTILSOURCES:.c=.o)
+COMMAND=zorg
 
-all: $(SOURCES) $(EXECUTABLE)
+all: $(COMMAND)
 
-$(EXECUTABLE): $(OBJECTS)
-	$(CC) $(LDFLAGS) $(OBJECTS) -o $@
+$(COMMAND): zorg-cmd.o $(UTILOBJECTS)
+	$(CC) $(LDFLAGS) zorg-cmd.o $(UTILOBJECTS) -o $@
 
-.cpp.o: zorg.h
+.c.o: $< zorg.h
 	$(CC) $(CFLAGS) $< -o $@
