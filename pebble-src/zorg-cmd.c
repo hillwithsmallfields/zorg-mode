@@ -20,41 +20,6 @@
 
 #include "zorg.h"
 
-void
-update_display_lines()
-{
-  /* pick up any mode change, or any changes within a mode */
-  switch (mode) {
-  case top_level_chooser:
-    break;
-  case file_chooser:
-    break;
-  case tree:
-    /* fixme: I think this may be a bit confused, probably should have loaded the data by now */
-#if 1
-    if (file_changed) {
-      file_changed = 0;
-      unload_data();
-    }
-    load_data();
-#endif
-    if ((start == -1) || (end == -1)) {
-      zorg_pebble_rescan_tree_level();
-    }
-    break;
-  case date:
-    break;
-  case tag_chooser:
-    break;
-  case tag:
-    break;
-  case live_data:
-    break;
-  case settings:
-    break;
-  }
-}
-
 int
 main(int argc, char **argv, char **env)
 {
@@ -92,19 +57,7 @@ main(int argc, char **argv, char **env)
 
       update_display_lines();
 
-      {
-	int i;
-	if (mode == tree) {
-	  printf("parent %d:  %s\n", parent, lines[parent]);
-	}
-	for (i = 0; i < zorg_pebble_display_n_lines(); i++) {
-	  printf("  %s display % 3d (line % 3d): %s\n",
-		 (i == cursor) ? "==>" : "   ",
-		 i, (display_lines != NULL) ? display_lines[i] : -1,
-		 zorg_pebble_display_line(i));
-	}
-
-      }
+      scrollout_display_lines();
 
       switch (command) {
       case 'q':			/* quit; on pebble, this will be "back" button when at top level */

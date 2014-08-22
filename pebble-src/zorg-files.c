@@ -67,6 +67,8 @@ unload_local_file()
   if (file_data != NULL) {
     free(file_data);
     file_data = NULL;
+    file_size = 0;
+    allocated_file_size = 0;
   }
   file_size = 0;
   if (lines != NULL) {
@@ -74,6 +76,7 @@ unload_local_file()
     lines = NULL;
   }
   n_lines = 0;
+  allocated_n_lines = 0;
   if (display_lines != NULL) {
     free(display_lines);
     display_lines = NULL;

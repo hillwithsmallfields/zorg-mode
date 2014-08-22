@@ -1,14 +1,25 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "zorg.h"
 
 void
 add_line(char *line)
 {
-  printf("adding line: %s\n", line);
-  /* todo: make it add the result to the buffer and to the lines array */
-  parse_line(line);
+  unsigned int llen = strlen(line);
+  if (line[0] == '#') {
+    /* We don't store this line, as we don't yet have anywhere to
+       store it; it contains the information needed to set the lines
+       storage up. */
+    parse_line(line);
+  } else {
+    printf("adding line: %s to data filling point at %p\n", line, data_filling_point);
+    strcpy(data_filling_point, line);
+    lines[n_lines++] = data_filling_point;
+    parse_line(data_filling_point);
+    data_filling_point += (llen + 1);
+  }
 }
 
 void

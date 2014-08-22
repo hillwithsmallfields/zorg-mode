@@ -1,3 +1,4 @@
+/* zorg.h */
 
 typedef enum zorg_mode {
   top_level_chooser,
@@ -37,7 +38,9 @@ extern char *currently_selected_file;
    This is a file as prepared by the companion emacs-lisp code.
 */
 extern char *file_data;
+extern char *data_filling_point;
 extern unsigned int file_size;
+extern unsigned int allocated_file_size;
 extern int file_changed;
 
 /* The data parsed into an array of lines.
@@ -50,6 +53,7 @@ extern int file_changed;
    A line beginning with a ':' character holds the array of tags.
  */
 extern unsigned int n_lines;
+extern unsigned int allocated_n_lines;
 extern char **lines;
 
 /* Variables for the tree-mode display. */
@@ -106,6 +110,8 @@ extern void parse_line(char *line);
 extern int *parse_data(char *data_buffer, unsigned int data_size, unsigned int *line_count_p);
 extern void load_data();
 extern void unload_data();
+extern void update_display_lines();
+extern void scrollout_display_lines();
 
 /* zorg-files.c */
 extern char *read_local_file(char *file_name, unsigned int *file_size_result);
@@ -116,3 +122,6 @@ extern void unload_local_file();
 extern void add_line(char *line);
 extern void load_remote_stream(char *stream_name);
 extern void unload_remote_stream();
+
+
+/* zorg.h ends here */

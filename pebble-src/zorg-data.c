@@ -15,7 +15,9 @@ char *currently_selected_file = NULL;
    This is a file as prepared by the companion emacs-lisp code.
 */
 char *file_data = NULL;
+char *data_filling_point = NULL;
 unsigned int file_size = 0;
+unsigned int allocated_file_size = 0;
 int file_changed = 0;
 
 /* The data parsed into an array of lines.
@@ -28,16 +30,17 @@ int file_changed = 0;
    A line beginning with a ':' character holds the array of tags.
  */
 unsigned int n_lines = 0;
+unsigned int allocated_n_lines = 0;
 char **lines = NULL;
 
 /* Variables for the tree-mode display. */
-unsigned int parent;
-unsigned int parent_level;
-unsigned int level;
-int start;
-int end;
-int old_start;
-int old_end;
+unsigned int parent = 0;
+unsigned int parent_level = 0;
+unsigned int level = 0;
+int start = -1;
+int end = -1;
+int old_start = -1;
+int old_end = -1;
 
 /* The keywords line is split into an array of strings. */
 char *keywords_line = NULL;
@@ -330,24 +333,29 @@ parse_line(char *line)
     case '#':
       {
 	char shebang[256];
-	if (sscanf(line, "%255s %d %d", shebang, &n_lines, &file_size) == 3) {
-	  printf("Reallocating data storage: %d %d\n", n_lines, file_size);
+	if (sscanf(line, "%255s %d %d", shebang, &allocated_n_lines, &file_size) == 3) {
+	  printf("Reallocating data storage: %d %d\n", allocated_n_lines, file_size);
 	  if (file_data != NULL) {
 	    free(file_data);
 	  }
 	  file_data = (char*)malloc(file_size);
+	  data_filling_point = file_data;
 	  if (lines != NULL) {
 	    free(lines);
 	  }
-	  lines = (char**)malloc((n_lines) * sizeof(char*));
+	  lines = (char**)malloc((allocated_n_lines) * sizeof(char*));
 	  if (display_lines != NULL) {
 	    free(display_lines);
 	  }
-	  display_lines = (int*)malloc((n_lines) * sizeof(int));
+	  display_lines = (int*)malloc((allocated_n_lines) * sizeof(int));
+	  display_n_lines = 0;
+	  n_lines = 0;
 	  keywords_line = NULL;
 	  n_keywords = 0;
 	  tags_line = NULL;
 	  n_tags = 0;
+	  start = end = old_start = old_end = -1;
+	  parent = parent_level = level = 0;
 	}
       }
     default:
@@ -421,6 +429,7 @@ parse_data(char *data_buffer, unsigned int data_size, unsigned int *line_count_p
 #endif
 
   *line_count_p = line_count;
+  allocated_n_lines = line_count;
   return displayed_lines_indices;
 }
 
@@ -455,4 +464,55 @@ unload_data()
   case none:
     break;
   }
+}
+
+void
+update_display_lines()
+{
+  /* pick up any mode change, or any changes within a mode */
+  switch (mode) {
+  case top_level_chooser:
+    break;
+  case file_chooser:
+    break;
+  case tree:
+    /* fixme: I think this may be a bit confused, probably should have loaded the data by now */
+#if 1
+    if (file_changed) {
+      file_changed = 0;
+      unload_data();
+    }
+    load_data();
+#endif
+    if ((start == -1) || (end == -1)) {
+      zorg_pebble_rescan_tree_level();
+    }
+    break;
+  case date:
+    break;
+  case tag_chooser:
+    break;
+  case tag:
+    break;
+  case live_data:
+    break;
+  case settings:
+    break;
+  }
+}
+
+void
+scrollout_display_lines()
+{
+  int i;
+  if (mode == tree) {
+    printf("parent %d:  %s\n", parent, lines[parent]);
+  }
+  for (i = 0; i < zorg_pebble_display_n_lines(); i++) {
+    printf("  %s display % 3d (line % 3d): %s\n",
+	   (i == cursor) ? "==>" : "   ",
+	   i, (display_lines != NULL) ? display_lines[i] : -1,
+	   zorg_pebble_display_line(i));
+  }
+
 }
