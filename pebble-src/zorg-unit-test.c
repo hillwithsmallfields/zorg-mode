@@ -13,12 +13,12 @@ static char *test_data[] = {
   /* 4 */ "1 Second top-level item",
   /* 5 */ "2 First second-level item within second top-level item",
   /* 6 */ "2 Second second-level item within second top-level item",
-  /* 7 */ "2 :8:12:9 Third second-level item within second top-level item", /* isn't working when :12: isn't the first tag */
+  /* 7 */ "2 :8:12:9 Third second-level item within second top-level item",
   /* 8 */ "1 Third top-level item",
   /* 9 */ "2 First second-level item within third top-level item",
   /* 10 */ "3 First third-level item within first second-level item within third top-level item",
-  /* 11 */ "3 :12 Second third-level item within first second-level item within third top-level item",
-  /* 12 */ "2 Second second-level item within third top-level item",
+  /* 11 */ "3 4:12 Second third-level item within first second-level item within third top-level item",
+  /* 12 */ "2 :12:7 Second second-level item within third top-level item",
   /* 13 */ "2 Third second-level item within third top-level item",
   /* 14 */ ":zero:one:two:three:four:five:six:seven:eight:nine:ten:eleven:twelve:thirteen:fourteen:fifteen:",
   NULL};
@@ -53,7 +53,7 @@ main(int argc, char **argv, char **env)
   update_display_lines();
   scrollout_display_lines();
 
-  printf("Tags output: (should be lines 1, 7, 11)\n");
+  printf("Tags output: (should be lines 1, 7, 11, 12)\n");
   strcpy(filter_search_string, "12");
   zorg_pebble_scan_tags();
   scrollout_display_lines();
