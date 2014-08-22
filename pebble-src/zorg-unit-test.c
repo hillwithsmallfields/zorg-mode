@@ -32,7 +32,7 @@ main(int argc, char **argv, char **env)
     chars += strlen(*p) + 1;
   }
 
-  snprintf(special, SPECIAL_MAX, "#/usr/local/bin/zorg %d %d\n", lines, chars);
+  snprintf(special, SPECIAL_MAX, "#!/usr/local/bin/zorg %d %d", lines, chars);
   add_line(special);
 
   for (p = test_data;

@@ -14,8 +14,8 @@ char *currently_selected_file = NULL;
 /* The whole data read from file or connection.
    This is a file as prepared by the companion emacs-lisp code.
 */
-char *file_data;
-unsigned int file_size;
+char *file_data = NULL;
+unsigned int file_size = 0;
 int file_changed = 0;
 
 /* The data parsed into an array of lines.
@@ -27,8 +27,8 @@ int file_changed = 0;
    A line beginning with a '!' character holds the array of keywords.
    A line beginning with a ':' character holds the array of tags.
  */
-unsigned int n_lines;
-char **lines;
+unsigned int n_lines = 0;
+char **lines = NULL;
 
 /* Variables for the tree-mode display. */
 unsigned int parent;
@@ -278,11 +278,88 @@ zorg_pebble_display_n_lines()
   exit(1);
 }
 
+void
+parse_line(char *line)
+{
+  char *p;
+  unsigned int j;
+
+  if (line != NULL) {
+    switch (line[0]) {
+    case '!':
+      keywords_line = line;
+      for (p = keywords_line; *p != '\0'; p++) {
+	if (*p == ' ') {
+	  n_keywords++;
+	}
+      }
+      keywords = (char**)malloc(sizeof(char*) * (n_keywords+1));
+      if (keywords == NULL) {
+	printf("Could not allocate keywords array\n");
+	exit(1);
+      }
+      j = 0;
+      for (p = keywords_line; *p != '\0'; p++) {
+	if (*p == ' ') {
+	  *p = '\0';
+	  printf("Recorded keyword %d as being start of %s\n", j, p+1);
+	  keywords[j++] = p+1;
+	}
+      }
+      break;
+    case ':':
+      tags_line = line;
+      for (p = tags_line; *p != '\0'; p++) {
+	if (*p == ':') {
+	  n_tags++;
+	}
+      }
+      tags = (char**)malloc(sizeof(char*) * (n_tags+1));
+      if (tags == NULL) {
+	printf("Could not allocate tags array\n");
+	exit(1);
+      }
+      j = 0;
+      for (p = tags_line; *p != '\0'; p++) {
+	if (*p == ':') {
+	  *p = '\0';
+	  tags[j++] = p+1;
+	}
+      }
+      break;
+    case '#':
+      {
+	char shebang[256];
+	if (sscanf(line, "%255s %d %d", shebang, &n_lines, &file_size) == 3) {
+	  printf("Reallocating data storage: %d %d\n", n_lines, file_size);
+	  if (file_data != NULL) {
+	    free(file_data);
+	  }
+	  file_data = (char*)malloc(file_size);
+	  if (lines != NULL) {
+	    free(lines);
+	  }
+	  lines = (char**)malloc((n_lines) * sizeof(char*));
+	  if (display_lines != NULL) {
+	    free(display_lines);
+	  }
+	  display_lines = (int*)malloc((n_lines) * sizeof(int));
+	  keywords_line = NULL;
+	  n_keywords = 0;
+	  tags_line = NULL;
+	  n_tags = 0;
+	}
+      }
+    default:
+      break;
+    }
+  }
+}
+
 int*
 parse_data(char *data_buffer, unsigned int data_size, unsigned int *line_count_p)
 {
   unsigned int i, j;
-  char *p;
   unsigned int line_count = 0;
   int *displayed_lines_indices;
 
@@ -326,56 +403,7 @@ parse_data(char *data_buffer, unsigned int data_size, unsigned int *line_count_p
   }
 #endif
   for (i = 0; i < line_count; i++) {
-    // printf("looking at line %d: %s\n", i, lines[i]);
-    if (lines[i] != NULL) {
-      switch (lines[i][0]) {
-      case '!':
-	keywords_line = lines[i];
-	for (p = keywords_line; *p != '\0'; p++) {
-	  if (*p == ' ') {
-	    n_keywords++;
-	  }
-	}
-	keywords = (char**)malloc(sizeof(char*) * (n_keywords+1));
-	if (keywords == NULL) {
-	  printf("Could not allocate keywords array\n");
-	  exit(1);
-	}
-	j = 0;
-	for (p = keywords_line; *p != '\0'; p++) {
-	  if (*p == ' ') {
-	    *p = '\0';
-	    printf("Recorded keyword %d as being start of %s\n", j, p+1);
-	    keywords[j++] = p+1;
-	  }
-	}
-	break;
-      case ':':
-	tags_line = lines[i];
-	for (p = tags_line; *p != '\0'; p++) {
-	  if (*p == ':') {
-	    n_tags++;
-	  }
-	}
-	tags = (char**)malloc(sizeof(char*) * (n_tags+1));
-	if (tags == NULL) {
-	  printf("Could not allocate tags array\n");
-	  exit(1);
-	}
-	j = 0;
-	for (p = tags_line; *p != '\0'; p++) {
-	  if (*p == ':') {
-	    *p = '\0';
-	    tags[j++] = p+1;
-	  }
-	}
-	break;
-      case '#':
-	/* todo: skip a shebang, read the number of lines and the number of characters */
-      default:
-	break;
-      }
-    }
+    parse_line(lines[i]);
   }
 #if 1
   if (keywords != NULL) {

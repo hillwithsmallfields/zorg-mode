@@ -7,6 +7,8 @@ void
 add_line(char *line)
 {
   printf("adding line: %s\n", line);
+  /* todo: make it add the result to the buffer and to the lines array */
+  parse_line(line);
 }
 
 void

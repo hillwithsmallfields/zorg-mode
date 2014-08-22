@@ -102,6 +102,7 @@ extern void zorg_pebble_scan_dates();
 extern char *zorg_pebble_display_line(unsigned int index);
 extern int zorg_pebble_display_n_lines();
 extern void zorg_pebble_rescan_tree_level();
+extern void parse_line(char *line);
 extern int *parse_data(char *data_buffer, unsigned int data_size, unsigned int *line_count_p);
 extern void load_data();
 extern void unload_data();
