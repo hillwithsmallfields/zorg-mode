@@ -370,6 +370,8 @@ parse_data(char *data_buffer, unsigned int data_size, unsigned int *line_count_p
 	  }
 	}
 	break;
+      case '#':
+	/* todo: skip a shebang, read the number of lines and the number of characters */
       default:
 	break;
       }

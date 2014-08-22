@@ -34,7 +34,7 @@ indicating that it is a special line.
 
 The special lines, declaring an array of keywords and a array of tags,
 are split up into their individual entries using null characters.
-The line starts are stored in `keywords_line' and `tags_line', and the
+Their line starts are stored in `keywords_line' and `tags_line', and the
 arrays of pointers into them are stored in `keywords' up to
 `n_keywords', and `tags' up to `n_tags'.
 
@@ -50,6 +50,24 @@ colon-separated list of indices into the tags array.  This list is
 space-terminated.
 
 After that comes the actual heading data to display.
+
+The line containing the keywords begins with the '!' character.  The
+last such line is taken as definitive, at least for now, but really
+there should only be one of them.
+
+The line containing the tags begins with the ':' character.  The last
+such line is taken as definitive, at least for now, but really there
+should only be one of them.
+
+A line beginning with a '#' character defines the size of the file.
+This should be the first line.  From the '#' character up to the first
+space is ignored, to make it usable as a shebang.  Following that is
+the number of lines and the number of characters.  These may be larger
+than their real values, but should not be smaller, as they are used
+for allocation.  They're not currently used when reading a file, as
+the program can find the size of the file by calling `stat' anyway;
+they're for reading from a stream of packets sent from the phone to
+the Pebble.
 
 Non-file-data display
 ---------------------
