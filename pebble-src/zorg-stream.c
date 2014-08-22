@@ -14,7 +14,7 @@ add_line(char *line)
        storage up. */
     parse_line(line);
   } else {
-    printf("adding line: %s to data filling point at %p\n", line, data_filling_point);
+    // printf("adding line: %s to data filling point at %p\n", line, data_filling_point);
     strcpy(data_filling_point, line);
     lines[n_lines++] = data_filling_point;
     parse_line(data_filling_point);
