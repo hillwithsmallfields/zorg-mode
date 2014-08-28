@@ -26,6 +26,7 @@ typedef struct zorg_top_level_item {
 #define FILTER_SEARCH_STRING_MAX 16
 
 extern char filter_search_string[FILTER_SEARCH_STRING_MAX];
+extern unsigned int filter_search_string_length;
 
 extern struct zorg_top_level_item top_level_items[];
 
@@ -76,6 +77,12 @@ extern char *tags_line;
 extern unsigned int n_tags;
 extern char **tags;
 extern int chosen_tag;
+
+/* The dates lines is split into an array of strings. */
+extern char *dates_line;
+extern unsigned int n_dates;
+extern char **dates;
+extern int chosen_date;
 
 /* The lines which are actually displayed, as indices into the main "lines" array. */
 extern unsigned int display_n_lines;
