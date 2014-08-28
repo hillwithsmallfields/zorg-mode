@@ -29,6 +29,9 @@ set_mode(zorg_mode new_mode)
     level = parent_level + 1;
     start = end = -1;
     break;
+  case leaf:
+    construct_leaf_display();
+    break;
   case file_chooser:
     {
       if (directory_data == NULL) {
@@ -139,11 +142,18 @@ zorg_middle_button()
 	printf("Found new level=%c, remembering old start=%d old end=%d\n", level, old_start, old_end);
 	start = end = -1;
 	break;
+      } else {
+	printf("Not found new level\n");
+	set_mode(leaf);
+	break;
       }
     }
     break;
+  case leaf:
+    /* todo: change state */
+    printf("Will eventually change the state here\n");
+    break;
   case file_chooser:
-    /* todo: change the current file */
     {
       printf("Selecting file %s\n", directory_lines[cursor]);
       char *new_file = directory_lines[cursor];
@@ -192,6 +202,12 @@ zorg_back_button()
   case file_chooser:
     set_mode(top_level_chooser);
     break;
+  case leaf:
+    /* can't do set_mode(tree) here as it goes to the root node */
+    /* todo: go up a level */
+    printf("going up from leaf level=%c, parent=%d parent_level=%c\n", level, parent, parent_level);
+    mode = tree;
+    /* fallthrough */
   case tree:
     printf("going up; level=%c parent_level=%c cursor=%d parent=%d\n", level, parent_level, cursor, parent);
     if (parent_level == '0') {
