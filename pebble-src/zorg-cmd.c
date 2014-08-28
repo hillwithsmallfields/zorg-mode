@@ -5,11 +5,9 @@
 
 /* todo: do something different on reaching a leaf node */
 /* todo: don't unload file data until loading another file */
-/* todo: tag-based selection */
-/* todo: date/time based selection */
 /* todo: changing states, and sending them back using pebble's DataLogging */
 /* todo: live data */
-/* todo: loading data from stream */
+/* open: loading data from stream */
 /* todo: settings */
 /* todo: commands from phone to bring up particular agendas according to context e.g. location, time */
 
