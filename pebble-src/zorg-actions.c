@@ -77,20 +77,25 @@ set_mode(zorg_mode new_mode)
     }
     break;
   case date:
-    {
-      zorg_pebble_scan_dates();
-      printf("date mode not implemented\n");
-      set_mode(top_level_chooser);
-    }
+    printf("Starting date mode with chosen date %d: %s (filter %s:%d)\n",
+	   chosen_date, dates[chosen_date], filter_search_string, filter_search_string_length);
+    strcpy(filter_search_string, dates[chosen_date]);
+    filter_search_string_length = strlen(filter_search_string);
+    zorg_pebble_scan_dates();
     break;
   case tag_chooser:
     printf("Starting choosing a tag\n");
     chosen_tag = -1;
     break;
+  case date_chooser:
+    printf("Starting choosing a date\n");
+    chosen_date = -1;
+    break;
   case tag:
     /* todo: ensure a file is loaded, and filter to produce display_lines by tag */
     printf("selecting tag %d = %s\n", chosen_tag, tags[chosen_tag]);
     snprintf(filter_search_string, FILTER_SEARCH_STRING_MAX, "%d", chosen_tag);
+    filter_search_string_length = strlen(filter_search_string);
     load_data();
     zorg_pebble_scan_tags();
     break;
@@ -160,6 +165,11 @@ zorg_middle_button()
     printf("entering tags mode with chosen tag %d = %s\n", chosen_tag, tags[chosen_tag]);
     set_mode(tag);
     break;
+  case date_chooser:
+    chosen_date = cursor;
+    printf("entering date mode with chosen date %d = %s\n", chosen_date, dates[chosen_date]);
+    set_mode(date);
+    break;
   case tag:
     /* todo: display individual entry */
     break;
@@ -217,6 +227,7 @@ zorg_back_button()
     break;
   case date:
   case tag_chooser:
+  case date_chooser:
   case live_data:
   case settings:
     set_mode(top_level_chooser);
