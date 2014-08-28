@@ -382,7 +382,7 @@ parse_data(char *data_buffer, unsigned int data_size, unsigned int *line_count_p
     }
   }
 
-  lines = (char**)malloc((line_count) * sizeof(char*));
+  lines = (char**)malloc((line_count+1) * sizeof(char*));
   if (lines == NULL) {
     fprintf(stderr, "Could not allocate lines array\n");
     exit(1);
