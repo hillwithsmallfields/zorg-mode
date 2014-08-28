@@ -7,6 +7,7 @@ typedef enum zorg_mode {
   date,
   tag,
   tag_chooser,			/* used in the lead-in to tag mode */
+  date_chooser,			/* used in the lead-in to date mode */
   live_data,
   settings
 } zorg_mode;
