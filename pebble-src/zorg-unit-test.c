@@ -7,18 +7,18 @@
 
 static char *test_data[] = {
   /* 0 */ "1 :1 First top-level item",
-  /* 1 */ "2 :12 First second-level item within first top-level item",
+  /* 1 */ "2 :12 First second-level item within first top-level item <2014-12-24 Wed>",
   /* 2 */ "2 :3 Second second-level item within first top-level item",
   /* 3 */ "2 :8 Third second-level item within first top-level item",
   /* 4 */ "1 Second top-level item",
   /* 5 */ "2 First second-level item within second top-level item",
-  /* 6 */ "2 Second second-level item within second top-level item",
+  /* 6 */ "2 Second second-level item within second top-level item <2014-12-25 Thu>",
   /* 7 */ "2 :8:12:9 Third second-level item within second top-level item",
   /* 8 */ "1 Third top-level item",
   /* 9 */ "2 First second-level item within third top-level item",
   /* 10 */ "3 First third-level item within first second-level item within third top-level item",
   /* 11 */ "3 4:12 Second third-level item within first second-level item within third top-level item",
-  /* 12 */ "2 :12:7 Second second-level item within third top-level item",
+  /* 12 */ "2 :12:7 Second second-level item within third top-level item <2014-12-25 Thu>",
   /* 13 */ "2 Third second-level item within third top-level item",
   /* 14 */ ":zero:one:two:three:four:five:six:seven:eight:nine:ten:eleven:twelve:thirteen:fourteen:fifteen:",
   NULL};
@@ -55,7 +55,14 @@ main(int argc, char **argv, char **env)
 
   printf("Tags output: (should be lines 1, 7, 11, 12)\n");
   strcpy(filter_search_string, "12");
+  filter_search_string_length = strlen(filter_search_string);
   zorg_pebble_scan_tags();
+  scrollout_display_lines();
+
+  printf("Date output: (should be lines 6, 12)\n");
+  strcpy(filter_search_string, "2014-12-25");
+  filter_search_string_length = strlen(filter_search_string);
+  zorg_pebble_scan_dates();
   scrollout_display_lines();
   
   exit(0);
