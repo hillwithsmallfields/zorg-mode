@@ -53,6 +53,12 @@ unsigned int n_tags = 0;
 char **tags = NULL;
 int chosen_tag = -1;
 
+/* The dates line is split into an array of strings. */
+char *dates_line = NULL;
+unsigned int n_dates = 0;
+char **dates = NULL;
+int chosen_date = -1;
+
 /* The lines which are actually displayed, as indices into the main "lines" array. */
 unsigned int display_n_lines;
 int *display_lines;
@@ -330,6 +336,26 @@ parse_line(char *line)
 	if (*p == ':') {
 	  *p = '\0';
 	  tags[j++] = p+1;
+	}
+      }
+      break;
+    case '@':
+      dates_line = line;
+      for (p = dates_line; *p != '\0'; p++) {
+	if (*p == ':') {
+	  n_dates++;
+	}
+      }
+      dates = (char**)malloc(sizeof(char*) * (n_dates+1));
+      if (dates == NULL) {
+	printf("Could not allocate dates array\n");
+	exit(1);
+      }
+      j = 0;
+      for (p = dates_line; *p != '\0'; p++) {
+	if (*p == ':') {
+	  *p = '\0';
+	  dates[j++] = p+1;
 	}
       }
       break;
