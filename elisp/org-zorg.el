@@ -38,7 +38,8 @@ FFile to export into: ")
 		  (cons '("!")
 			(mapcar (lambda (kl)
 				  (org-remove-keyword-keys (cdr kl)))
-				org-todo-keywords)))))
+				org-todo-keywords))))
+	  (file-dates (org-dates-in-buffer)))
       (goto-char (point-min))
       (delete-non-matching-lines "^\\*")
       (goto-char (point-min))
@@ -90,6 +91,10 @@ FFile to export into: ")
       (insert ":"
 	      (mapconcat 'identity file-tags ":")
 	      "\n")
+      (when file-dates
+	(insert "@"
+		(mapconcat 'identity file-dates " ")
+		"\n"))
       ;; todo: output list of dates, in some compact form
       )
     (basic-save-buffer)))
