@@ -170,7 +170,6 @@ zorg_pebble_scan_dates()
   }
 }
 
-
 void
 zorg_pebble_rescan_tree_level()
 {
@@ -213,9 +212,20 @@ zorg_pebble_rescan_tree_level()
   if (start == -1) {
     printf("failed to set start in zorg_pebble_rescan_tree_level\n");
     /* todo: handle leaf node */
+    /* todo: is this path ever triggered now? gets to leaf by another route now */
     start = old_start;
     end = old_end;
   }
+}
+
+void
+construct_leaf_display()
+{
+  printf("construct_leaf_display start=%d end=%d level=%c parent=%d parent_level=%c\n", start, end, level, parent, parent_level);
+  printf("\n");
+  display_n_lines = 0;
+  display_lines[display_n_lines++] = start;
+  /* todo: scan for body lines (beginning with spaces) */
 }
 
 char *
@@ -226,6 +236,8 @@ zorg_pebble_display_line(unsigned int index)
     return top_level_items[index].label;
   case file_chooser:
     return directory_lines[index];
+  case leaf:
+    return lines[display_lines[index]];
   case tree:
   case tag:
   case date:
@@ -268,6 +280,7 @@ zorg_pebble_display_n_lines()
   case top_level_chooser:
     return (sizeof(top_level_items) / sizeof(top_level_items[0])) - 1;
   case tree:
+  case leaf:
   case tag:
   case date:
     return display_n_lines;
@@ -512,6 +525,8 @@ update_display_lines()
     if ((start == -1) || (end == -1)) {
       zorg_pebble_rescan_tree_level();
     }
+    break;
+  case leaf:
     break;
   case date:
     break;
