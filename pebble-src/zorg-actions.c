@@ -125,9 +125,9 @@ zorg_middle_button()
        because the user might be an undisciplined wreck who has
        jumped a level ;-) */
     printf("select/show: current=%d becomes new parent, new parent level=%c, looking for next lower level\n", parent, parent_level);
-    for (scan = parent + 1; scan <= n_lines; scan++) {
+    for (scan = parent + 1; scan < n_lines; scan++) {
       char margin_char = lines[scan][0];
-      printf("  considering %s\n", lines[scan]);
+      // printf("  considering %s\n", lines[scan]);
       if (margin_char < '0' || margin_char > '9') {
 	printf("Skipping non-heading %d: %s\n", scan, lines[scan]);
 	continue;		/* not a heading line */
