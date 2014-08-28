@@ -70,7 +70,7 @@ the program can find the size of the file by calling `stat' anyway;
 they're for reading from a stream of packets sent from the phone to
 the Pebble.
 
-A line beginning with the @ character contains a space-separated list
+A line beginning with the @ character contains a comma-separated list
 of dates.
 
 Non-file-data display
