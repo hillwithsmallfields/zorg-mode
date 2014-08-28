@@ -176,11 +176,12 @@ zorg_pebble_rescan_tree_level()
 {
   int scan;
 
-  // printf("rescanning for start and end, parent=%d\n", parent);
+  printf("rescanning for start and end, parent=%d\n", parent);
   if (parent >= end) {
     printf("seem to have gone off end at zorg_pebble_rescan_tree_level\n");
   }
   display_n_lines = 0;
+  start = end = -1;
 
   for (scan = parent; scan < n_lines; scan++) {
     char margin_char;
@@ -188,21 +189,21 @@ zorg_pebble_rescan_tree_level()
       break;
     }
     margin_char = lines[scan][0];
-    // printf("  scan %d: %s (level %c, want %c)\n", scan, lines[scan], margin_char, level);
+    printf("  scan %d: %s (level %c, want %c)\n", scan, lines[scan], margin_char, level);
     if (margin_char < '0' || margin_char > '9') {
-      // printf("  Skipping non-heading %d: %s\n", scan, lines[scan]);
+      printf("  Skipping non-heading %d: %s\n", scan, lines[scan]);
       continue;		/* not a heading line */
     }
     if (margin_char == level) {
-      // printf("  got one at our level: line %d is display line %d\n", scan, display_n_lines);
+      printf("  got one at our level: line %d is display line %d\n", scan, display_n_lines);
       display_lines[display_n_lines++] = scan;
       if (start == -1) {
-	// printf("Got start %d: %s\n", scan, lines[scan]);
+	printf("Got start %d: %s\n", scan, lines[scan]);
 	start = scan;
       }
     }
     if ((margin_char < level) && (scan != parent)) {
-      // printf("Gone out a level (on %c, outside %c), stopping scan at %d: %s\n", margin_char, level, scan, lines[scan]);
+      printf("Gone out a level (on %c, outside %c), stopping scan at %d: %s\n", margin_char, level, scan, lines[scan]);
       break;		/* gone out a level */
     }
     end = scan;		/* trails one behind */
