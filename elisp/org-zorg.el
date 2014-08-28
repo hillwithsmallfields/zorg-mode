@@ -93,7 +93,7 @@ FFile to export into: ")
 	      "\n")
       (when file-dates
 	(insert "@"
-		(mapconcat 'identity file-dates " ")
+		(mapconcat 'identity file-dates ",")
 		"\n"))
       ;; todo: output list of dates, in some compact form
       )
