@@ -42,6 +42,7 @@ Lines beginning with a space are continuation (body) lines, and will
 only be displayed on leaf nodes.
 
 Heading lines (with depths) have a space character after the depth.
+* TODO: drop the space *
 They may have a `!' character after that, after which there is a
 number which is an index into the keywords array.
 
@@ -68,6 +69,9 @@ for allocation.  They're not currently used when reading a file, as
 the program can find the size of the file by calling `stat' anyway;
 they're for reading from a stream of packets sent from the phone to
 the Pebble.
+
+A line beginning with the @ character contains a space-separated list
+of dates.
 
 Non-file-data display
 ---------------------
