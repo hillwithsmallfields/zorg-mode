@@ -1,9 +1,11 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "zorg.h"
 
 char filter_search_string[FILTER_SEARCH_STRING_MAX];
+unsigned int filter_search_string_length = 0;
 
 zorg_mode mode;
 
@@ -80,8 +82,8 @@ char *zorg_dir_name = "/home/jcgs/tmp";
 struct zorg_top_level_item top_level_items[] = {
   { tree, "Tree" },
   { file_chooser, "Files" },
-  { date, "Date" },
   { tag_chooser, "Tags" },
+  { date_chooser, "Date" },
   { live_data, "Live data" },
   { settings, "Settings" },
   { top_level_chooser, NULL }};
@@ -141,42 +143,33 @@ zorg_pebble_scan_dates()
     char *p;
     int hit = 0;
 
-    // printf("Looking for tag %s in line %d: %s\n", filter_search_string, scan, lines[scan]);
+    // printf("Looking for date %s in line %d: %s\n", filter_search_string, scan, lines[scan]);
 
     for (p = lines[scan]; *p != 0; p++) {
 
 
       /* todo: fill display_lines with just one of each date, in order */
 
-#if 0
-      /* from zorg_pebble_scan_tags */
       char c = *p;
 
-      if (c == ':') {
-	char *q = filter_search_string;
-	char d = *q++;
-	p++;			/* skip the ':' */
-	c = *p++;
-	// printf("comparing %s with %s (%c with %c)\n", q-1, p-1, d, c);
-	while (c == d) {
-	  c = *p++;
-	  d = *q++;
-	  /* printf("comparing %c with %c\n", d, c); */
-	}
-	if (d == '\0') {
+      if (c == '<') {
+	if (strncmp(p+1,
+		    filter_search_string,
+		    filter_search_string_length) == 0) {
 	  hit = 1;
 	  // printf("matched!\n");
 	  break;
 	}
       }
-#endif
     }
+
     if (hit) {
       display_lines[display_n_lines++] = scan;
       printf("Added line %d to display (now %d lines)\n", scan, display_n_lines);
     }
   }
 }
+
 
 void
 zorg_pebble_rescan_tree_level()
@@ -234,6 +227,7 @@ zorg_pebble_display_line(unsigned int index)
     return directory_lines[index];
   case tree:
   case tag:
+  case date:
     {
       char *line = lines[display_lines[index]];
       for (line++; *line == ' '; line++); /* skip the level, and following whitespace */
@@ -247,10 +241,10 @@ zorg_pebble_display_line(unsigned int index)
       }
       return line;
     }
-  case date:
-    return "date mode not implemented";
   case tag_chooser:
-    return tags[index];
+    return (tags == NULL) ? NULL : tags[index];
+  case date_chooser:
+    return (dates == NULL) ? NULL : dates[index];
   case live_data:
     switch (index) {
     case 0: return "Time will go here";
@@ -274,13 +268,14 @@ zorg_pebble_display_n_lines()
     return (sizeof(top_level_items) / sizeof(top_level_items[0])) - 1;
   case tree:
   case tag:
+  case date:
     return display_n_lines;
   case file_chooser:
     return n_directory_lines;
-  case date:
-    return 0;
   case tag_chooser:
     return n_tags;
+  case date_chooser:
+    return n_dates;
   case live_data:
     return 4;
   case settings:
@@ -342,7 +337,7 @@ parse_line(char *line)
     case '@':
       dates_line = line;
       for (p = dates_line; *p != '\0'; p++) {
-	if (*p == ':') {
+	if (*p == ',') {
 	  n_dates++;
 	}
       }
@@ -353,7 +348,7 @@ parse_line(char *line)
       }
       j = 0;
       for (p = dates_line; *p != '\0'; p++) {
-	if (*p == ':') {
+	if (*p == ',') {
 	  *p = '\0';
 	  dates[j++] = p+1;
 	}
@@ -520,6 +515,8 @@ update_display_lines()
   case date:
     break;
   case tag_chooser:
+    break;
+  case date_chooser:
     break;
   case tag:
     break;
