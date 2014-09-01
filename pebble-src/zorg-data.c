@@ -193,12 +193,7 @@ zorg_pebble_scan_dates()
     char *p;
     int hit = 0;
 
-    // printf("Looking for date %s in line %d: %s\n", filter_search_string, scan, lines[scan]);
-
     for (p = lines[scan]; *p != 0; p++) {
-
-
-      /* todo: fill display_lines with just one of each date, in order */
 
       char c = *p;
 
@@ -207,7 +202,6 @@ zorg_pebble_scan_dates()
 		    filter_search_string,
 		    filter_search_string_length) == 0) {
 	  hit = 1;
-	  // printf("matched!\n");
 	  break;
 	}
       }
@@ -215,7 +209,6 @@ zorg_pebble_scan_dates()
 
     if (hit) {
       display_lines[display_n_lines++] = scan;
-      printf("Added line %d to display (now %d lines)\n", scan, display_n_lines);
     }
   }
 }
