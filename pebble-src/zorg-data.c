@@ -88,6 +88,48 @@ struct zorg_top_level_item top_level_items[] = {
   { settings, "Settings" },
   { top_level_chooser, NULL }};
 
+#define debug_general 1
+
+#ifdef debug_general
+char *
+mode_name(zorg_mode mode_code)
+{
+  switch (mode_code) {
+  case top_level_chooser: return "top_level_chooser";
+  case file_chooser: return "file_chooser";
+  case tree: return "tree";
+  case date: return "date";
+  case tag: return "tag";
+  case leaf: return "leaf";
+  case tag_chooser: return "tag_chooser";
+  case date_chooser: return "date_chooser";
+  case live_data: return "live_data";
+  case settings: return "settings";
+  default: return "bad mode";
+  }
+}
+
+char *
+data_source_name(data_source_type source_type)
+{
+  switch(source_type) {
+  case local_file: return "local_file";
+  case remote_stream: return "remote_stream";
+  case none: return "none";
+  default: "bad data source mode";
+  }
+}
+
+void
+show_status(char *label)
+{
+  printf("%s in mode %s\n", label, mode_name(mode));
+  printf("  data source=%s; file_data=%p; n_lines=%d(%d displayed), filename=%s\n", data_source_name(data_source), file_data, n_lines, display_n_lines, currently_selected_file);
+}
+#endif
+
+#define debug_scan_tags 1
+
 void
 zorg_pebble_scan_tags()
 {
@@ -109,15 +151,21 @@ zorg_pebble_scan_tags()
 	char d = *q++;
 	p++;			/* skip the ':' */
 	c = *p++;
-	// printf("comparing %s with %s (%c with %c)\n", q-1, p-1, d, c);
+#ifdef debug_scan_tags
+	printf("comparing %s with %s (%c(%02x) with %c(%02x))\n", q-1, p-1, d, d, c, c);
+#endif
 	while (c == d) {
 	  c = *p++;
 	  d = *q++;
-	  // printf("comparing %c with %c\n", d, c);
+#ifdef debug_scan_tags
+	  printf("comparing %c(%02x) with %c(%02x)\n", d, d, c, c);
+#endif
 	}
-	if (d == '\0') {
+	if ((d == '\0') && ((c == ' ') || (c == ':'))) {
 	  hit = 1;
+#ifdef debug_scan_tags
 	  // printf("matched!\n");
+#endif
 	  break;
 	} else {
 	  /* back off one, to re-scan the : */
@@ -127,7 +175,9 @@ zorg_pebble_scan_tags()
     }
     if (hit) {
       display_lines[display_n_lines++] = scan;
-      // printf("Added line %d to display (now %d lines)\n", scan, display_n_lines);
+#ifdef debug_scan_tags
+      printf("Added line %d to display (now %d lines)\n", scan, display_n_lines);
+#endif
     }
   }
 }
@@ -188,21 +238,31 @@ zorg_pebble_rescan_tree_level()
       break;
     }
     margin_char = lines[scan][0];
+#ifdef debug_scan
     printf("  scan %d: %s (level %c, want %c)\n", scan, lines[scan], margin_char, level);
+#endif
     if (margin_char < '0' || margin_char > '9') {
+#ifdef debug_scan
       printf("  Skipping non-heading %d: %s\n", scan, lines[scan]);
+#endif
       continue;		/* not a heading line */
     }
     if (margin_char == level) {
+#ifdef debug_scan
       printf("  got one at our level: line %d is display line %d\n", scan, display_n_lines);
+#endif
       display_lines[display_n_lines++] = scan;
       if (start == -1) {
+#ifdef debug_scan
 	printf("Got start %d: %s\n", scan, lines[scan]);
+#endif
 	start = scan;
       }
     }
     if ((margin_char < level) && (scan != parent)) {
+#ifdef debug_scan
       printf("Gone out a level (on %c, outside %c), stopping scan at %d: %s\n", margin_char, level, scan, lines[scan]);
+#endif
       break;		/* gone out a level */
     }
     end = scan;		/* trails one behind */
@@ -443,7 +503,7 @@ parse_data(char *data_buffer, unsigned int data_size, unsigned int *line_count_p
   // fprintf(stderr, "Setting end marker in %d\n", j-1);
   lines[j-1] = NULL;
 
-#if 1
+#ifdef debug_parse
   for (i = 0; i < line_count; i++) {
     printf("Line %d: %s\n", i, lines[i]);
   }
@@ -451,7 +511,7 @@ parse_data(char *data_buffer, unsigned int data_size, unsigned int *line_count_p
   for (i = 0; i < line_count; i++) {
     parse_line(lines[i]);
   }
-#if 1
+#ifdef debug_parse
   if (keywords != NULL) {
     printf("Keywords[%d]:\n", n_keywords);
     for (i = 0; i < n_keywords; i++) {
@@ -474,7 +534,9 @@ parse_data(char *data_buffer, unsigned int data_size, unsigned int *line_count_p
 void
 load_data()
 {
-  printf("load_data called, file_data=%p currently_selected_file=%s\n", file_data, currently_selected_file);
+#ifdef debug_general
+  show_status("load_data");
+#endif
   if (file_data == NULL) {
     switch (data_source) {
     case local_file:
@@ -492,6 +554,9 @@ load_data()
 void
 unload_data()
 {
+#ifdef debug_general
+  show_status("unload_data");
+#endif
   switch (data_source) {
   case local_file:
     unload_local_file();
@@ -507,7 +572,11 @@ unload_data()
 void
 update_display_lines()
 {
+#ifdef debug_general
+  show_status("update_display_lines");
+#endif
   /* pick up any mode change, or any changes within a mode */
+  load_data();
   switch (mode) {
   case top_level_chooser:
     break;
@@ -547,6 +616,9 @@ void
 scrollout_display_lines()
 {
   int i;
+#ifdef debug_general
+  show_status("scrollout_display_lines");
+#endif
   if (mode == tree) {
     printf("parent %d:  %s\n", parent, lines[parent]);
   }
