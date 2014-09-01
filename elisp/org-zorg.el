@@ -41,7 +41,7 @@ FFile to export into: ")
 				org-todo-keywords))))
 	  (file-dates (org-dates-in-buffer)))
       (goto-char (point-min))
-      (delete-non-matching-lines "^\\*")
+      (delete-non-matching-lines "^[* \t]")
       (goto-char (point-min))
       (while (not (eobp))
 	(cond
@@ -76,6 +76,7 @@ FFile to export into: ")
 	      )
 	    ))
 	 ((looking-at "^\\(\\s-+\\)")
+	  (message "continuation line")
 	  ;; start other lines with a single space
 	  (replace-match " " nil t nil 1))
 	 (t
