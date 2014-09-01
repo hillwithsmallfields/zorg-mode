@@ -48,6 +48,8 @@ int old_end = -1;
 char *keywords_line = NULL;
 unsigned int n_keywords = 0;
 char **keywords = NULL;
+int current_keyword = -1;
+#define KEYWORD_PROXY -42
 
 /* The tags lines is split into an array of strings. */
 char *tags_line = NULL;
@@ -116,7 +118,7 @@ data_source_name(data_source_type source_type)
   case local_file: return "local_file";
   case remote_stream: return "remote_stream";
   case none: return "none";
-  default: "bad data source mode";
+  default: return "bad data source mode";
   }
 }
 
@@ -271,14 +273,42 @@ zorg_pebble_rescan_tree_level()
   }
 }
 
+char *
+skip_line_preamble(char *line)
+{
+  for (line++; *line == ' '; line++); /* skip the level, and following whitespace */
+  if (*line == '!') {
+    for (; *line != ' '; line++); /* skip the keyword */
+    for (; *line == ' '; line++); /* skip the space after the keyword */
+  }
+  if (*line == ':') {
+    for (; *line != ' '; line++); /* skip the tags */
+    for (; *line == ' '; line++); /* skip the space after the tags */
+  }
+  return line;
+}
+
 void
 construct_leaf_display()
 {
+  char *p;
+  int scan = start + 1;
+  current_keyword = -1;
+  for (p = lines[start]; *p != '\0'; p++) {
+    if (*p == '!') {
+      current_keyword = atoi(p+1);
+    }
+  }
   printf("construct_leaf_display start=%d end=%d level=%c parent=%d parent_level=%c\n", start, end, level, parent, parent_level);
-  printf("\n");
   display_n_lines = 0;
+  if (current_keyword >= 0) {
+    display_lines[display_n_lines++] = KEYWORD_PROXY;
+  }
   display_lines[display_n_lines++] = start;
-  /* todo: scan for body lines (beginning with spaces) */
+  while ((scan < n_lines) && lines[scan][0] == ' ') {
+    display_lines[display_n_lines++] = scan;
+    scan++;
+  }
 }
 
 char *
@@ -290,23 +320,20 @@ zorg_pebble_display_line(unsigned int index)
   case file_chooser:
     return directory_lines[index];
   case leaf:
-    return lines[display_lines[index]];
+    if (index == ((current_keyword >= 0) ? 1 : 0)) {
+      // printf("returning leaf header line index=%d display_lines[%d]=%d\n", index, index, display_lines[index]);
+      return skip_line_preamble(lines[display_lines[index]]);
+    } else {
+      int x = display_lines[index];
+      if ((x == KEYWORD_PROXY) && (current_keyword != -1)) {
+	return keywords[current_keyword];
+      }
+      return lines[x]+1;
+    }
   case tree:
   case tag:
   case date:
-    {
-      char *line = lines[display_lines[index]];
-      for (line++; *line == ' '; line++); /* skip the level, and following whitespace */
-      if (*line == '!') {
-	for (; *line != ' '; line++); /* skip the keyword */
-	for (; *line == ' '; line++); /* skip the space after the keyword */
-      }
-      if (*line == ':') {
-	for (; *line != ' '; line++); /* skip the tags */
-	for (; *line == ' '; line++); /* skip the space after the tags */
-      }
-      return line;
-    }
+    return skip_line_preamble(lines[display_lines[index]]);
   case tag_chooser:
     return (tags == NULL) ? NULL : tags[index];
   case date_chooser:
