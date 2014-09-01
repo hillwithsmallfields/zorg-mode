@@ -87,11 +87,11 @@ set_mode(zorg_mode new_mode)
     zorg_pebble_scan_dates();
     break;
   case tag_chooser:
-    printf("Starting choosing a tag\n");
+    printf("set_mode starting choosing a tag\n");
     chosen_tag = -1;
     break;
   case date_chooser:
-    printf("Starting choosing a date\n");
+    printf("set_mode starting choosing a date\n");
     chosen_date = -1;
     break;
   case tag:
@@ -143,7 +143,7 @@ zorg_middle_button()
 	start = end = -1;
 	break;
       } else {
-	printf("Not found new level\n");
+	printf("Not found new level; setting mode to leaf\n");
 	set_mode(leaf);
 	break;
       }
@@ -151,7 +151,7 @@ zorg_middle_button()
     break;
   case leaf:
     /* todo: change state */
-    printf("Will eventually change the state here\n");
+    printf("Middle button: In leaf state: will eventually change the state here\n");
     break;
   case file_chooser:
     {
