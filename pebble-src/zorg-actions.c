@@ -87,16 +87,12 @@ set_mode(zorg_mode new_mode)
     zorg_pebble_scan_dates();
     break;
   case tag_chooser:
-    printf("set_mode starting choosing a tag\n");
     chosen_tag = -1;
     break;
   case date_chooser:
-    printf("set_mode starting choosing a date\n");
     chosen_date = -1;
     break;
   case tag:
-    /* todo: ensure a file is loaded, and filter to produce display_lines by tag */
-    printf("selecting tag %d = %s\n", chosen_tag, tags[chosen_tag]);
     snprintf(filter_search_string, FILTER_SEARCH_STRING_MAX, "%d", chosen_tag);
     filter_search_string_length = strlen(filter_search_string);
     load_data();
