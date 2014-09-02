@@ -49,6 +49,7 @@ char *keywords_line = NULL;
 unsigned int n_keywords = 0;
 char **keywords = NULL;
 int current_keyword = -1;
+int original_keyword = -1;
 #define KEYWORD_PROXY -42
 
 /* The tags lines is split into an array of strings. */
@@ -296,7 +297,7 @@ construct_leaf_display()
   current_keyword = -1;
   for (p = lines[start]; *p != '\0'; p++) {
     if (*p == '!') {
-      current_keyword = atoi(p+1);
+      original_keyword = current_keyword = atoi(p+1);
     }
   }
   printf("construct_leaf_display start=%d end=%d level=%c parent=%d parent_level=%c\n", start, end, level, parent, parent_level);

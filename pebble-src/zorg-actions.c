@@ -146,27 +146,28 @@ zorg_middle_button()
     }
     break;
   case leaf:
-    /* todo: change state */
-    printf("Middle button: In leaf state: will eventually change the state here\n");
-    printf("  Current keyword is %d(%s) out of %d\n", current_keyword, keywords[current_keyword], n_keywords);
     current_keyword++;
     if (current_keyword >= n_keywords) {
       current_keyword = 0;
     }
-    /* if at a delimiter, rewind */
     if (strcmp(keywords[current_keyword], "|") == 0) {
-      printf(" Reached delimiter, rewinding\n");
-      current_keyword--;
-      /* todo: debug this arrangement */
-      while ((current_keyword > 0) && (strcmp(keywords[current_keyword], "|") == 0)) {
-	current_keyword--;
+      current_keyword++;
+      if (current_keyword >= n_keywords) {
+	current_keyword = 0;
       }
-      if (current_keyword > 0) {	/* we found the delimiter, move to the one after it */
-	printf("  Rewound too far, adjusting\n");
-	current_keyword++;
+    } else {
+      /* if at a group delimiter, rewind */
+      /* todo: put this in the elisp too, when I find the input file format for it */
+      if (strcmp(keywords[current_keyword], "#") == 0) {
+	current_keyword--;
+	while ((current_keyword > 0) && (strcmp(keywords[current_keyword], "#") != 0)) {
+	  current_keyword--;
+	}
+	if (current_keyword > 0) {	/* we found the delimiter, move to the one after it */
+	  current_keyword++;
+	}
       }
     }
-    printf("  New keyword is %d(%s)\n", current_keyword, keywords[current_keyword]);
     break;
   case file_chooser:
     {
@@ -221,6 +222,10 @@ zorg_back_button()
     /* can't do set_mode(tree) here as it goes to the root node */
     printf("going up from leaf level=%c, parent=%d parent_level=%c\n", level, parent, parent_level);
     mode = tree;
+    if (current_keyword != original_keyword) {
+      printf("keyword has changed\n");
+      /* todo: log the keyword change */
+    }
     /* fallthrough */
   case tree:
     printf("going up; level=%c parent_level=%c cursor=%d parent=%d\n", level, parent_level, cursor, parent);
