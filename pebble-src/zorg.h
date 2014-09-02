@@ -72,6 +72,7 @@ extern int old_end;
 extern char *keywords_line;
 extern unsigned int n_keywords;
 extern char **keywords;
+extern int current_keyword;
 
 /* The tags lines is split into an array of strings. */
 extern char *tags_line;
