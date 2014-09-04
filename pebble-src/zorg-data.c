@@ -91,7 +91,7 @@ struct zorg_top_level_item top_level_items[] = {
   { settings, "Settings" },
   { top_level_chooser, NULL }};
 
-#define debug_general 1
+// #define debug_general 1
 
 #ifdef debug_general
 char *
@@ -137,7 +137,9 @@ void
 zorg_pebble_scan_tags()
 {
   int scan;
+#ifdef debug
   printf("in zorg_pebble_scan_tags(%s)\n", filter_search_string);
+#endif
   display_n_lines = 0;
 
   for (scan = 0; scan < n_lines; scan++) {
@@ -189,7 +191,9 @@ void
 zorg_pebble_scan_dates()
 {
   int scan;
+#ifdef debug
   printf("in zorg_pebble_scan_dates(%s)\n", filter_search_string);
+#endif
   display_n_lines = 0;
 
   for (scan = 0; scan < n_lines; scan++) {
@@ -221,10 +225,12 @@ zorg_pebble_rescan_tree_level()
 {
   int scan;
 
+#ifdef debug
   printf("rescanning for start and end, parent=%d\n", parent);
   if (parent >= end) {
     printf("seem to have gone off end at zorg_pebble_rescan_tree_level\n");
   }
+#endif
   display_n_lines = 0;
   start = end = -1;
 
@@ -266,7 +272,9 @@ zorg_pebble_rescan_tree_level()
   display_lines[display_n_lines] = -1;
   cursor = 0;
   if (start == -1) {
+#ifdef printf
     printf("failed to set start in zorg_pebble_rescan_tree_level\n");
+#endif
     /* todo: handle leaf node */
     /* todo: is this path ever triggered now? gets to leaf by another route now */
     start = old_start;
@@ -300,7 +308,9 @@ construct_leaf_display()
       original_keyword = current_keyword = atoi(p+1);
     }
   }
+#ifdef printf
   printf("construct_leaf_display start=%d end=%d level=%c parent=%d parent_level=%c\n", start, end, level, parent, parent_level);
+#endif
   display_n_lines = 0;
   if (current_keyword >= 0) {
     display_lines[display_n_lines++] = KEYWORD_PROXY;
@@ -397,7 +407,9 @@ parse_line(char *line)
       }
       keywords = (char**)malloc(sizeof(char*) * (n_keywords+1));
       if (keywords == NULL) {
+#ifdef debug_parse
 	printf("Could not allocate keywords array\n");
+#endif
 	exit(1);
       }
       j = 0;
@@ -418,7 +430,9 @@ parse_line(char *line)
       }
       tags = (char**)malloc(sizeof(char*) * (n_tags+1));
       if (tags == NULL) {
+#ifdef debug_parse
 	printf("Could not allocate tags array\n");
+#endif
 	exit(1);
       }
       j = 0;
@@ -438,7 +452,9 @@ parse_line(char *line)
       }
       dates = (char**)malloc(sizeof(char*) * (n_dates+1));
       if (dates == NULL) {
+#ifdef debug_parse
 	printf("Could not allocate dates array\n");
+#endif
 	exit(1);
       }
       j = 0;
@@ -453,7 +469,9 @@ parse_line(char *line)
       {
 	char shebang[256];
 	if (sscanf(line, "%255s %d %d", shebang, &allocated_n_lines, &file_size) == 3) {
+#ifdef debug_parse
 	  printf("Reallocating data storage: %d %d\n", allocated_n_lines, file_size);
+#endif
 	  if (file_data != NULL) {
 	    free(file_data);
 	  }
