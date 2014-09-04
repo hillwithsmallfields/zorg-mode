@@ -223,8 +223,27 @@ zorg_back_button()
     printf("going up from leaf level=%c, parent=%d parent_level=%c\n", level, parent, parent_level);
     mode = tree;
     if (current_keyword != original_keyword) {
-      printf("keyword has changed\n");
-      /* todo: log the keyword change */
+      int scan = start;
+      int scan_level = level;
+      int path[10];		/* number of levels is one digit */
+      int ipath = 0;
+      printf("keyword has changed in item %d at level %c\n", scan, scan_level);
+      while (scan_level >= 1) {
+	path[ipath++] = scan;
+	while (scan >= 0) {
+	  scan--;
+	  if (lines[scan][0] < scan_level) {
+	    scan_level = lines[scan][0];
+	    break;
+	  }
+	}
+      }
+      printf("Log change %d", current_keyword);
+      for (ipath--; ipath >= 0; ipath--) {
+	printf(":%s", lines[path[ipath]]);
+      }
+      printf("\n");
+      /* todo: send log change to Pebble logging (and equivalent on other devices) */
     }
     /* fallthrough */
   case tree:
