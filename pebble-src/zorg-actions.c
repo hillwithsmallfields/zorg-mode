@@ -179,6 +179,31 @@ zorg_middle_button()
     break;
   case date_chooser:
     chosen_date = cursor;
+#ifdef debug
+    printf("entering date mode with chosen date %d = %s\n", chosen_date, dates[chosen_date]);
+#endif
+    set_mode(date);
+    break;
+  case tag:
+    /* todo: display individual entry */
+    break;
+  case live_data:
+    /* maybe update, but it should probably do that on ticks anyway */
+    break;
+  case settings:
+    break;
+  }
+}
+
+void
+zorg_back_button()
+{
+  int scan;
+  switch (mode) {
+  case top_level_chooser:
+#ifdef debug
+    printf("this would quit\n");
+#endif
     break;
   case file_chooser:
     set_mode(top_level_chooser);
@@ -201,12 +226,7 @@ zorg_middle_button()
 	  }
 	}
       }
-      printf("Log change %d", current_keyword);
-      for (ipath--; ipath >= 0; ipath--) {
-	printf(":%s", lines[path[ipath]]);
-      }
-      printf("\n");
-      /* todo: send log change to Pebble logging (and equivalent on other devices) */
+      log_changes(path, ipath);
     }
     /* fallthrough */
   case tree:
