@@ -45,14 +45,14 @@ set_mode(zorg_mode new_mode)
 	  char *name = dir_buf->d_name;
 	  int name_len = strlen(name);
 	  if (strncmp(name+name_len-5, ".zorg", 5) == 0) {
-	    printf("name = %s\n", name);
+	    // printf("name = %s\n", name);
 	    n_directory_lines++;
 	    directory_data_size += name_len + 1;
 	  }
 	}
 	rewinddir(dir);
       
-	printf("%d matches, %d bytes\n", n_directory_lines, directory_data_size);
+	// printf("%d matches, %d bytes\n", n_directory_lines, directory_data_size);
 	directory_lines = (char**)malloc(n_directory_lines*sizeof(char*));
 	directory_data = (char*)malloc(directory_data_size);
 
@@ -63,25 +63,29 @@ set_mode(zorg_mode new_mode)
 	  if (strncmp(name+name_len-5, ".zorg", 5) == 0) {
 	    strcpy(p, name);
 	    directory_lines[i] = p;
-	    printf("[%d] p = %p = %s\n", i, directory_lines[i], directory_lines[i]);
+	    // printf("[%d] p = %p = %s\n", i, directory_lines[i], directory_lines[i]);
 	    p += name_len + 1;
 	    i++;
-	    printf("name = %s\n", name);
+	    // printf("name = %s\n", name);
 	  }
 	}
 	closedir(dir);
       }
     }
+#ifdef debug
     {
       unsigned int i;
       for (i = 0; i < n_directory_lines; i++) {
 	printf("Line %d: %p %s\n", i, directory_lines[i], directory_lines[i]);
       }
     }
+#endif
     break;
   case date:
+#ifdef debug
     printf("Starting date mode with chosen date %d: %s (filter %s:%d)\n",
 	   chosen_date, dates[chosen_date], filter_search_string, filter_search_string_length);
+#endif
     strcpy(filter_search_string, dates[chosen_date]);
     filter_search_string_length = strlen(filter_search_string);
     zorg_pebble_scan_dates();
@@ -123,23 +127,31 @@ zorg_middle_button()
     /* Look for a new level; we don't assume it's parent_level+1,
        because the user might be an undisciplined wreck who has
        jumped a level ;-) */
+#ifdef debug
     printf("select/show: current=%d becomes new parent, new parent level=%c, looking for next lower level\n", parent, parent_level);
+#endif
     for (scan = parent + 1; scan < n_lines; scan++) {
       char margin_char = lines[scan][0];
       // printf("  considering %s\n", lines[scan]);
       if (margin_char < '0' || margin_char > '9') {
+#ifdef debug
 	printf("Skipping non-heading %d: %s\n", scan, lines[scan]);
+#endif
 	continue;		/* not a heading line */
       }
       if (margin_char > parent_level) {
 	level = margin_char;
 	old_start = start;
 	old_end = end;
+#ifdef debug
 	printf("Found new level=%c, remembering old start=%d old end=%d\n", level, old_start, old_end);
+#endif
 	start = end = -1;
 	break;
       } else {
+#ifdef debug
 	printf("Not found new level; setting mode to leaf\n");
+#endif
 	set_mode(leaf);
 	break;
       }
@@ -171,7 +183,9 @@ zorg_middle_button()
     break;
   case file_chooser:
     {
+#ifdef debug
       printf("Selecting file %s\n", directory_lines[cursor]);
+#endif
       char *new_file = directory_lines[cursor];
       currently_selected_file = (char*)malloc(strlen(new_file) + strlen(zorg_dir_name) + 1);
       sprintf(currently_selected_file, "%s/%s", zorg_dir_name, new_file);
@@ -188,12 +202,16 @@ zorg_middle_button()
     break;
   case tag_chooser:
     chosen_tag = cursor;
+#ifdef debug
     printf("entering tags mode with chosen tag %d = %s\n", chosen_tag, tags[chosen_tag]);
+#endif
     set_mode(tag);
     break;
   case date_chooser:
     chosen_date = cursor;
+#ifdef debug
     printf("entering date mode with chosen date %d = %s\n", chosen_date, dates[chosen_date]);
+#endif
     set_mode(date);
     break;
   case tag:
@@ -213,21 +231,27 @@ zorg_back_button()
   int scan;
   switch (mode) {
   case top_level_chooser:
+#ifdef debug
     printf("this would quit\n");
+#endif
     break;
   case file_chooser:
     set_mode(top_level_chooser);
     break;
   case leaf:
     /* can't do set_mode(tree) here as it goes to the root node */
+#ifdef debug
     printf("going up from leaf level=%c, parent=%d parent_level=%c\n", level, parent, parent_level);
+#endif
     mode = tree;
     if (current_keyword != original_keyword) {
       int scan = start;
       int scan_level = level;
       int path[10];		/* number of levels is one digit */
       int ipath = 0;
+#ifdef debug
       printf("keyword has changed in item %d at level %c\n", scan, scan_level);
+#endif
       while (scan_level >= 1) {
 	path[ipath++] = scan;
 	while (scan >= 0) {
@@ -247,15 +271,21 @@ zorg_back_button()
     }
     /* fallthrough */
   case tree:
+#ifdef debug
     printf("going up; level=%c parent_level=%c cursor=%d parent=%d\n", level, parent_level, cursor, parent);
+#endif
     if (parent_level == '0') {
       set_mode(top_level_chooser);
     } else {
       for (scan = parent; scan >= 0; scan--) {
 	char margin_char = lines[scan][0];
+#ifdef debug
 	printf("Trying %d, level is %c, looking for level < %c: %s\n", scan, margin_char, parent_level, lines[scan]);
+#endif
 	if (margin_char < '0' || margin_char > '9') {
+#ifdef debug
 	  printf("Skipping non-heading %d: %s\n", scan, lines[scan]);
+#endif
 	  continue;		/* not a heading line */
 	}
 	if (parent_level == '1') {
@@ -269,7 +299,9 @@ zorg_back_button()
 	    level = parent_level;	/* new level is the old parent level */
 	    parent = scan;
 	    parent_level = (scan == 0) ? '0' : margin_char;
+#ifdef debug
 	    printf("Got new parent level %c; new current level is %c\n", parent_level, level);
+#endif
 	    break;
 	  }
 	}
