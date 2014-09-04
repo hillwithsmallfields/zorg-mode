@@ -18,6 +18,19 @@
 
 #include "zorg.h"
 
+void
+log_changes(int *path, int path_len)
+{
+  printf("Log change %s", keywords[current_keyword]);
+  if (data_source == local_file) {
+    printf(":%s", currently_selected_file);
+  }
+  for (path_len--; path_len >= 0; path_len--) {
+    printf(":%s", lines[path[path_len]]);
+  }
+  printf("\n");
+}
+
 int
 main(int argc, char **argv, char **env)
 {
