@@ -41,6 +41,21 @@ curses_display_lines()
   wrefresh(stdscr);
 }
 
+void
+log_changes(int *path, int path_len)
+{
+  FILE *changes = fopen("/tmp/zorg-changes", "a");
+  fprintf(changes, "Log change %s", keywords[current_keyword]);
+  if (data_source == local_file) {
+    fprintf(changes, ":%s", currently_selected_file);
+  }
+  for (path_len--; path_len >= 0; path_len--) {
+    fprintf(changes, ":%s", lines[path[path_len]]);
+  }
+  fprintf(changes,"\n");
+  fclose(changes);
+}
+
 int
 main(int argc, char **argv, char **env)
 {
