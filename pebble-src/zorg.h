@@ -110,6 +110,8 @@ extern void set_mode(zorg_mode new_mode);
 extern void load_local_file(char *filename);
 extern void zorg_middle_button();
 extern void zorg_back_button();
+/* provided to zorg-actions.c by caller */
+extern void log_changes(int *path, int path_len);
 
 /* zorg-data.c */
 extern void zorg_pebble_scan_tags();
