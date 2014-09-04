@@ -24,7 +24,7 @@ main(int argc, char **argv, char **env)
   mode = top_level_chooser;
 
   if (argc != 2) {
-    fprintf(stderr, "Usage: zorg-pebble file\n");
+    fprintf(stderr, "Usage: zorg file\n");
     exit(1);
   }
 
