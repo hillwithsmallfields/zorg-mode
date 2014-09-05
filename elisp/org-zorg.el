@@ -108,4 +108,34 @@ DExport to: ")
     (org-export-to-zorg org-file (expand-file-name (file-name-nondirectory org-file)
 						   zorg-dir))))
 
+(defun org-import-zorg-special-line (line-pattern separator)
+  "Find and remove the special data line matching LINE-PATTERN, returning its SEPARATOR separated contents as an array."
+  (save-excursion
+    (goto-char (point-min))
+    (if (re-search-forward line-pattern (point-max) t)
+	(let* ((start (match-beginning 0))
+	       (end (1+ (match-end 0)))
+	       (as-vector (apply 'vector (split-string (match-string-no-properties 1) separator t))))
+	  (delete-region start end)
+	  as-vector)
+      (vector))))
+
+(defun org-import-from-zorg (zorg-file org-file)
+  "Convert ZORG-FILE to ORG-FILE."
+  (interactive "fFile to import from:
+FFile to import into: ")
+  (save-excursion
+    (find-file org-file)
+    (erase-buffer)
+    (insert-file-contents zorg-file)
+    (let ((keywords (org-import-zorg-special-line "^!\\(.+\\)$" " "))
+	  (tags (org-import-zorg-special-line "^:\\(.+\\)$" ":"))
+	  (dates (org-import-zorg-special-line "^@\\(.+\\)$" ","))))
+    ;; todo: process ordinary lines
+
+
+    ;; finally we are in the correct form to be seen as an org-mode file
+    (org-mode)
+    (basic-save-buffer)))
+
 ;;;; org-zorg.el ends here
