@@ -27,6 +27,7 @@
   "Convert ORG-FILE to ZORG-FILE."
   (interactive "fFile to export from:
 FFile to export into: ")
+  ;; todo: remove drawers, properties, etc
   (save-excursion
     (find-file zorg-file)
     (erase-buffer)
