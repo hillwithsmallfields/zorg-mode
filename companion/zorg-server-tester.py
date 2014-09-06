@@ -7,7 +7,7 @@ A simple echo client, based on http://ilab.cs.byu.edu/python/socket/echoclient.h
 import socket
 
 host = 'localhost'
-port = 48080
+port = 48083
 size = 1024
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.connect((host,port))
