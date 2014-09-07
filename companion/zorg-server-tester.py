@@ -7,11 +7,11 @@ A simple echo client, based on http://ilab.cs.byu.edu/python/socket/echoclient.h
 import socket
 
 host = 'localhost'
-port = 48083
+port = 48088
 size = 1024
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.connect((host,port))
-s.send('D')
+s.send('F/home/jcgs/Dropbox/org/general.org')
 data = s.recv(size)
 s.close()
 print 'Received:', data 
