@@ -10,11 +10,15 @@ import PyOrgMode
 import os
 import fnmatch
 
-port = 48083
+port = 48088
+
+directory_files = []
 
 def serve_directory_start(directory):
     """Return the first part of the listing of DIRECTORY."""
+    global directory_files
     directory_files = []
+    print "Starting directory listing of", directory
     for file in os.listdir(directory):
         if fnmatch.fnmatch(file, "*.org"):
             directory_files.append(file)
@@ -22,12 +26,15 @@ def serve_directory_start(directory):
 
 def serve_directory_next():
     """Return the next part of the listing of the current directory."""
+    global directory_files
     print directory_files.pop(0)
 
 def serve_file_start(filename):
     """Serve the first part of FILENAME."""
     tree = PyOrgMode.OrgDataStructure()
+    print "about to load tree from", filename
     tree.load_from_file(filename)
+    print "tree is", tree
     # todo: get all keywords, tags, dates
     # todo: count up the size, and send the size line
     pass
@@ -50,7 +57,7 @@ def receive_from(socket):
         if '\n' in chunk:
             return ''.join(chunks)
 
-org_directory = "~/Dropbox/org"
+org_directory = "~/Dropbox/org/"
 
 def handle_request(request):
     if request[0] == "f":
@@ -64,10 +71,17 @@ def handle_request(request):
     pass
 
 def start_zorg_server():
+    global org_directory
     parser = argparse.ArgumentParser(description="Support a zorg Pebble app")
     parser.add_argument('directory', help="The directory to scan for .org files")
     args = parser.parse_args()
+    print "got", args.directory, "from command line; default dir is", org_directory
     org_directory = args.directory
+
+    print "Files in", org_directory, "are:"
+    for file in os.listdir(org_directory):
+        print " * ", file
+
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     local = True
     if local:
