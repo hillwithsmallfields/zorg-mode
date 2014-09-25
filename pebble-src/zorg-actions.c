@@ -41,35 +41,41 @@ set_mode(zorg_mode new_mode)
 	char *p;
 	n_directory_lines = 0;
 	directory_data_size = 0;
-	while ((dir_buf = readdir(dir))) {
-	  char *name = dir_buf->d_name;
-	  int name_len = strlen(name);
-	  if (strncmp(name+name_len-5, ".zorg", 5) == 0) {
-	    // printf("name = %s\n", name);
-	    n_directory_lines++;
-	    directory_data_size += name_len + 1;
+	if (dir != NULL) {
+	  while ((dir_buf = readdir(dir))) {
+	    char *name = dir_buf->d_name;
+	    int name_len = strlen(name);
+	    if (strncmp(name+name_len-5, ".zorg", 5) == 0) {
+	      // printf("name = %s\n", name);
+	      n_directory_lines++;
+	      directory_data_size += name_len + 1;
+	    }
 	  }
-	}
-	rewinddir(dir);
+	  rewinddir(dir);
       
-	// printf("%d matches, %d bytes\n", n_directory_lines, directory_data_size);
-	directory_lines = (char**)malloc(n_directory_lines*sizeof(char*));
-	directory_data = (char*)malloc(directory_data_size);
+	  // printf("%d matches, %d bytes\n", n_directory_lines, directory_data_size);
+	  directory_lines = (char**)malloc(n_directory_lines*sizeof(char*));
+	  directory_data = (char*)malloc(directory_data_size);
 
-	i = 0; p = directory_data;
-	while ((dir_buf = readdir(dir))) {
-	  char *name = dir_buf->d_name;
-	  int name_len = strlen(name);
-	  if (strncmp(name+name_len-5, ".zorg", 5) == 0) {
-	    strcpy(p, name);
-	    directory_lines[i] = p;
-	    // printf("[%d] p = %p = %s\n", i, directory_lines[i], directory_lines[i]);
-	    p += name_len + 1;
-	    i++;
-	    // printf("name = %s\n", name);
+	  i = 0; p = directory_data;
+	  while ((dir_buf = readdir(dir))) {
+	    char *name = dir_buf->d_name;
+	    int name_len = strlen(name);
+	    if (strncmp(name+name_len-5, ".zorg", 5) == 0) {
+	      strcpy(p, name);
+	      directory_lines[i] = p;
+	      // printf("[%d] p = %p = %s\n", i, directory_lines[i], directory_lines[i]);
+	      p += name_len + 1;
+	      i++;
+	      // printf("name = %s\n", name);
+	    }
 	  }
+	  closedir(dir);
+	} else {
+	  /* could not open directory */
+	  error_message = "Could not open directory";
+	  set_mode(error);
 	}
-	closedir(dir);
       }
     }
     break;
@@ -95,6 +101,10 @@ set_mode(zorg_mode new_mode)
     break;
   case settings:
     printf("settings mode not implemented\n");
+    set_mode(top_level_chooser);
+    break;
+  case error:
+    printf("An error has occurred\n");
     set_mode(top_level_chooser);
     break;
   }
@@ -192,6 +202,8 @@ zorg_middle_button()
     break;
   case settings:
     break;
+  case error:
+    break;
   }
 }
 
@@ -263,6 +275,7 @@ zorg_back_button()
   case date_chooser:
   case live_data:
   case settings:
+  case error:
     set_mode(top_level_chooser);
     break;
   case tag:
