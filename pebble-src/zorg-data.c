@@ -13,6 +13,8 @@ data_source_type data_source;
 
 char *currently_selected_file = NULL;
 
+char *error_message = NULL;
+
 /* The whole data read from file or connection.
    This is a file as prepared by the companion emacs-lisp code.
 */
@@ -359,6 +361,11 @@ zorg_pebble_display_line(unsigned int index)
     }
   case settings:
     return "settings not implemented";
+  case error:
+    if (index > 0 && error_message != NULL) {
+      return error_message;
+    }
+    return "There has been an error";
   }
   printf("Bad mode!");
   exit(1);
@@ -385,6 +392,8 @@ zorg_pebble_display_n_lines()
     return 4;
   case settings:
     return 0;
+  case error:
+    return error_message != NULL ? 2 : 1;
   }
   printf("Bad mode!");
   exit(1);
