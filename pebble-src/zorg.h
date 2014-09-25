@@ -10,7 +10,8 @@ typedef enum zorg_mode {
   tag_chooser,			/* used in the lead-in to tag mode */
   date_chooser,			/* used in the lead-in to date mode */
   live_data,
-  settings
+  settings,
+  error
 } zorg_mode;
 
 typedef enum data_source_type {
@@ -126,6 +127,7 @@ extern void load_data();
 extern void unload_data();
 extern void update_display_lines();
 extern void scrollout_display_lines();
+extern char *error_message;
 
 /* zorg-files.c */
 extern char *read_local_file(char *file_name, unsigned int *file_size_result);
