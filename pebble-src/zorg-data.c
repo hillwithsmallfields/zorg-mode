@@ -7,8 +7,12 @@
 char filter_search_string[FILTER_SEARCH_STRING_MAX];
 unsigned int filter_search_string_length = 0;
 
+/* The current mode of the interface: things like top level, choosing
+   a file, setting state of a leaf node, etc */
 zorg_mode mode;
 
+/* An indication of where the current data came from (file, stream,
+   etc): */
 data_source_type data_source;
 
 char *currently_selected_file = NULL;
@@ -16,12 +20,12 @@ char *currently_selected_file = NULL;
 char *error_message = NULL;
 
 /* The whole data read from file or connection.
-   This is a file as prepared by the companion emacs-lisp code.
+   This is as prepared by the companion emacs-lisp code.
 */
-char *file_data = NULL;
+char *text_buffer = NULL;
 char *data_filling_point = NULL;
-unsigned int file_size = 0;
-unsigned int allocated_file_size = 0;
+unsigned int text_buffer_size = 0;
+unsigned int allocated_text_buffer_size = 0;
 int file_changed = 0;
 
 /* The data parsed into an array of lines.
@@ -129,7 +133,7 @@ void
 show_status(char *label)
 {
   printf("%s in mode %s\n", label, mode_name(mode));
-  printf("  data source=%s; file_data=%p; n_lines=%d(%d displayed), filename=%s\n", data_source_name(data_source), file_data, n_lines, display_n_lines, currently_selected_file);
+  printf("  data source=%s; text_buffer=%p; n_lines=%d(%d displayed), filename=%s\n", data_source_name(data_source), text_buffer, n_lines, display_n_lines, currently_selected_file);
 }
 #endif
 
@@ -477,15 +481,15 @@ parse_line(char *line)
     case '#':
       {
 	char shebang[256];
-	if (sscanf(line, "%255s %d %d", shebang, &allocated_n_lines, &file_size) == 3) {
+	if (sscanf(line, "%255s %d %d", shebang, &allocated_n_lines, &text_buffer_size) == 3) {
 #ifdef debug_parse
-	  printf("Reallocating data storage: %d %d\n", allocated_n_lines, file_size);
+	  printf("Reallocating data storage: %d %d\n", allocated_n_lines, text_buffer_size);
 #endif
-	  if (file_data != NULL) {
-	    free(file_data);
+	  if (text_buffer != NULL) {
+	    free(text_buffer);
 	  }
-	  file_data = (char*)malloc(file_size);
-	  data_filling_point = file_data;
+	  text_buffer = (char*)malloc(text_buffer_size);
+	  data_filling_point = text_buffer;
 	  if (lines != NULL) {
 	    free(lines);
 	  }
@@ -585,7 +589,7 @@ load_data()
 #ifdef debug_general
   show_status("load_data");
 #endif
-  if (file_data == NULL) {
+  if (text_buffer == NULL) {
     switch (data_source) {
     case local_file:
       load_local_file(currently_selected_file);

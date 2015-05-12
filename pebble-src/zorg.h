@@ -41,10 +41,10 @@ extern char *currently_selected_file;
 /* The whole data read from file or connection.
    This is a file as prepared by the companion emacs-lisp code.
 */
-extern char *file_data;
+extern char *text_buffer;
 extern char *data_filling_point;
-extern unsigned int file_size;
-extern unsigned int allocated_file_size;
+extern unsigned int text_buffer_size;
+extern unsigned int allocated_text_buffer_size;
 extern int file_changed;
 
 /* The data parsed into an array of lines.

@@ -54,9 +54,9 @@ void
 load_local_file(char *filename)
 {
   printf("Loading data from local file %s\n", filename);
-  file_data = read_local_file(filename, &file_size);
+  text_buffer = read_local_file(filename, &text_buffer_size);
 
-  display_lines = parse_data(file_data, file_size, &n_lines);
+  display_lines = parse_data(text_buffer, text_buffer_size, &n_lines);
 
   data_source = local_file;
 }
@@ -64,13 +64,13 @@ load_local_file(char *filename)
 void
 unload_local_file()
 {
-  if (file_data != NULL) {
-    free(file_data);
-    file_data = NULL;
-    file_size = 0;
-    allocated_file_size = 0;
+  if (text_buffer != NULL) {
+    free(text_buffer);
+    text_buffer = NULL;
+    text_buffer_size = 0;
+    allocated_text_buffer_size = 0;
   }
-  file_size = 0;
+  text_buffer_size = 0;
   if (lines != NULL) {
     free(lines);
     lines = NULL;
